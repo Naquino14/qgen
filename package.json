@@ -1,5 +1,5 @@
 {
-  "name": "qgen",
+  "name": "imhere-qgen",
   "version": "1.0.0",
   "description": "An SVG QR Code Generator I made for a project.",
   "main": "lib/index.js",
@@ -8,12 +8,11 @@
     "lib/**/*"
   ],
   "scripts": {
-    "test": "jest --config jestconfig.json",
     "build": "tsc",
-    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\" \"src/**/*.tsx\"",
     "lint": "tslint -p tsconfig.json",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint",
+    "prepublishOnly": "npm run lint",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags"
@@ -30,9 +29,13 @@
   },
   "homepage": "https://github.com/naquino14/qgen#readme",
   "devDependencies": {
+    "@types/react": "^18.0.21",
     "prettier": "^2.7.1",
     "tslint": "^6.1.3",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "react": "^18.2.0"
   }
 }
