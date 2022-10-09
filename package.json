@@ -1,6 +1,6 @@
 {
   "name": "imhere-qgen",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "description": "An SVG QR Code Generator I made for a project.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\" \"src/**/*.tsx\"",
+    "format": "prettier --write \"src/**/*.tsx\"",
     "lint": "tslint -p tsconfig.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm run lint",

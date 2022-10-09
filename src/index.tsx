@@ -3,7 +3,11 @@ import React from 'react'
 type Props = {
   width: number
   height: number
+  squareLength: number
   style?: React.CSSProperties
+  squares: qsquare[][],
+  falseColor?: string,
+  trueColor?: string,
 }
 
 export const index: React.FC = () => {
@@ -11,30 +15,30 @@ export const index: React.FC = () => {
 }
 
 export type qsquare = {
-  x: number
-  y: number
   a: boolean
 }
 
-export const CheckerBoard: React.FC<Props> = ({ width, height, style }) => {
-  const squares: qsquare[][] = [
-    [
-      { x: 0, y: 0, a: false },
-      { x: 10, y: 0, a: true },
-    ],
-    [
-      { x: 0, y: 10, a: true },
-      { x: 10, y: 10, a: false },
-    ],
-  ]
+export const QrRenderer: React.FC<Props> = ({
+  width,
+  height,
+  squareLength,
+  style,
+  squares,
+  falseColor = null,
+  trueColor = null
+}) => {
   return (
     <div>
       <svg width={width} height={height} style={style}>
-        {squares.map((row, x) => {
-          row.map((square, y) => {
-            return <rect x={square.x} y={square.y} width={10} height={10} fill={square.a ? 'black' : 'white'} />
-          })
-        })}
+        {
+          squares.map(
+            (row, x) => row.map(
+              (square, y) => (
+                <rect key={`${x}-${y}`} x={y * squareLength} y={x * squareLength} width={10} height={10} fill={square.a ? trueColor ?? 'black' : falseColor ?? 'white'} />
+              )
+            )
+          )
+        }
       </svg>
     </div>
   )
