@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/naquino14/qgen/issues"
   },
-  "homepage": "https://github.com/naquino14/qgen#readme"
+  "homepage": "https://github.com/naquino14/qgen#readme",
+  "devDependencies": {
+    "typescript": "^4.8.4"
+  }
 }
