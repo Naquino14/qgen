@@ -17,7 +17,7 @@ export const i: React.FC = () => {
 }
 
 export const StampCode = (base: boolean[][], stamp: boolean[][], x: number = 0, y: number = 0) => {
-  let result: boolean[][] = base
+  const result: boolean[][] = base
   for (let i = 0; i < stamp.length; i++) {
     for (let j = 0; j < stamp[i].length; j++) {
       result[i + y][j + x] = stamp[i][j]
@@ -60,8 +60,6 @@ export const QrRenderer: React.FC<Props> = ({
     qr[i][6] = o
     qr[6][i] = o
   }
-
-
 
   return (
     <div>
