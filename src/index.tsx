@@ -1,7 +1,10 @@
 import React from 'react'
 import { FinderPattern, AlignmentPattern } from './patterns'
-import { PreStampV10 } from './stamper'
+import { PreStampV10, PreStampV4 } from './stamper'
 import { GenV10ECIheader } from './encoding'
+
+const v10wh = 66
+const v4wh = 44
 
 type Props = {
   width?: number | null
@@ -37,11 +40,12 @@ export const QrRenderer: React.FC<Props> = ({
 
   // let bitstream = GenV10ECIheader(payload)
 
-  const qr = PreStampV10()
+  const qr = PreStampV4()
 
   return (
+    // todo: this is goofy ahh with bug and small dimensions, pls fix
     <div>
-      <svg width={width ?? 66 * squareLength} height={height ?? 66 * squareLength} style={style}>
+      <svg width={width ?? v4wh * squareLength} height={height ?? v4wh * squareLength} style={style}>
         {qr.map((row, x) =>
           row.map((square, y) => (
             <rect

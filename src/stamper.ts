@@ -62,7 +62,7 @@ export const PreStampV4 = () => {
   qr = StampCode(qr, FinderPattern, 0, 26)
 
   // Stamp alignment patterns
-  qr = StampCode(qr, AlignmentPattern, 14, 4)
+  qr = StampCode(qr, AlignmentPattern, 24, 24)
 
   // Stamp timing pattern
   for (let i = 7; i < 26; i++) {
@@ -73,10 +73,12 @@ export const PreStampV4 = () => {
 
   // final qr code stamp
   let finalQr: boolean[][] = []
-  for (let i = 0; i < 26; i++) {
-    finalQr[i] = new Array(26).fill(false)
+  for (let i = 0; i < 41; i++) {
+    finalQr[i] = new Array(41).fill(false)
   }
 
   finalQr = StampCode(finalQr, qr, 4, 4)
   qr = finalQr
+
+  return qr
 }
