@@ -43,16 +43,17 @@ export const GenPayload = (payload: string, headerFunction: (payload: string) =>
     if (i + 1 < payloadLength) group.push(charCodes[i + 1])
     charCodeGroups.push(group)
   }
-  console.log('char code groups', charCodeGroups)
 
   // step 3: convert char codes to bits (11 bits per group) and push to payload bits
-  for (let i = 0; i < charCodeGroups.length; i++) {
-    const group = charCodeGroups[i]
+  for (const group of charCodeGroups) {
     if (group.length === 1)
       payloadBits.push(...ConvertToBits(group[0], 6))
     else
       payloadBits.push(...ConvertToBits(group[0] * 45 + group[1], 11))
   }
+
+  // step 4: add terminator
+  payloadBits.push(...GenTerminator())
 
   return payloadBits
 }
