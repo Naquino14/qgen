@@ -14,5 +14,7 @@ export const GenV4ECIheader = (payload: string) => {
 }
 
 export const GenTerminator = () => {
-
+  const terminator: boolean[] = []
+  terminator.push(false, false, false, false, false, false, false, false, false)
+  return terminator
 }
