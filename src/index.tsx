@@ -1,7 +1,7 @@
 import React from 'react'
 import { FinderPattern, AlignmentPattern } from './patterns'
 import { PreStampV10, PreStampV4 } from './stamper'
-import { GenV10ECIheader } from './encoding'
+import { BitpayloadToCodewords, GenV10ECIheader, GenV4ECIheader, GenV4Payload } from './encoding'
 
 const v10wh = 66
 const v4wh = 44
@@ -37,6 +37,10 @@ export const QrRenderer: React.FC<Props> = ({
 
   // for testing purposes, override the payload
   payload = 'http://localhost:3000/&eventid=67897654467898765&uid=1234567890&tag=0'
+
+  let bitstreamHeader = GenV4ECIheader(payload)
+  const bitStream = GenV4Payload(payload)
+  const codewords = BitpayloadToCodewords(bitStream)
 
   // let bitstream = GenV10ECIheader(payload)
 
