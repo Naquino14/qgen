@@ -21,7 +21,7 @@ export const GenTerminator = () => {
   return terminator
 }
 
-export const GenV4Payload = (payload: string/*, headerFunction: (payload: string) => boolean[]*/) => {
+export const GenV4Payload = (payload: string /*, headerFunction: (payload: string) => boolean[]*/) => {
   payload = payload.toUpperCase()
   const payloadLength = payload.length
   const payloadBits: boolean[] = []
@@ -59,12 +59,12 @@ export const BitpayloadToCodewords = (payload: boolean[]) => {
   // split payload into codewords
   const codewords: boolean[][] = []
   // loop over the payloads
-  let i = 0, c = 0;
+  let i = 0,
+    c = 0
   while (i < payload.length) {
     codewords[c] ??= []
     codewords[c].push(payload[i] ?? false)
-    if (codewords[c].length === 8)
-      c++
+    if (codewords[c].length === 8) c++
     i++
   }
 
@@ -78,9 +78,49 @@ const ConvertToBits = (value: number, length: number) => {
 }
 
 const AlphanumericTable = [
-  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-  'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '$', '%', '*',
-  '+', '-', '.', '/', ':'
+  '0',
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
+  ' ',
+  '$',
+  '%',
+  '*',
+  '+',
+  '-',
+  '.',
+  '/',
+  ':',
 ]

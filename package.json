@@ -1,6 +1,6 @@
 {
   "name": "imhere-qgen",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "An SVG QR Code Generator I made for a project.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
