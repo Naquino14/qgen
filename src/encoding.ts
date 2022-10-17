@@ -27,8 +27,8 @@ export const GenV4Payload = (payload: string/*, headerFunction: (payload: string
   const payloadBits: boolean[] = []
 
   // generate and add header
-  //const header = headerFunction(payload)
-  //payloadBits.push(...header)
+  // const header = headerFunction(payload)
+  // payloadBits.push(...header)
 
   // step 1: convert payload to char codes
   const charCodes: number[] = []

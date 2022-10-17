@@ -38,7 +38,7 @@ export const QrRenderer: React.FC<Props> = ({
   // for testing purposes, override the payload
   payload = 'http://localhost:3000/&eventid=67897654467898765&uid=1234567890&tag=0'
 
-  let bitstreamHeader = GenV4ECIheader(payload)
+  const bitstreamHeader = GenV4ECIheader(payload)
   const bitStream = GenV4Payload(payload)
   const codewords = BitpayloadToCodewords(bitStream)
 
