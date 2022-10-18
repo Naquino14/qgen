@@ -1,3 +1,5 @@
+import { ByteModulo, AlphanumericTable } from "./patterns"
+
 export const GenV10ECIheader = (payload: string) => {
   const payloadLength = payload.length
   const alphaNumericECI = [false, false, true, false]
@@ -68,59 +70,51 @@ export const BitpayloadToCodewords = (payload: boolean[]) => {
     i++
   }
 
+  // pad final codeword if needed
+  if (codewords[c].length < 8) {
+    const pad = 8 - codewords[c].length
+    const padArray = new Array(pad).fill(false)
+    codewords[c].push(...padArray)
+  }
   return codewords
+}
+
+const BytewiseModulus = (codeword: boolean[]) => {
+  const r: boolean[] = []
+  r.fill(false, 8)
+  for (let i = 0; i < codeword.length; i++)
+    r[i] = XOR(codeword[i], ByteModulo[i])
+}
+
+export const SplitDataCodewordsV4 = (codewords: boolean[][]) => {
+  // ok so bascally 
+  // v4 has 100 codewords total
+  // as of right now, the placeholder URL has 48 codewords (see index)
+  // which leaves us with 52 codewords to fill (perfect for level Q error correction)
+  // that means we have 2 error correction blocks
+  // that gives us a (c, k, r) of (50, 24, 13)
+  // where (per block) c is the total codewords, 
+  // k is the number of data codewords,
+  // and r is the error correction capacity (number of erasures?)
+  // so we have 24 data codewords per block
+  // and 26 error correction codewords per block
+
+  const dataBlocks: boolean[][][] = []
+  dataBlocks[0] = []
+  dataBlocks[1] = []
+  dataBlocks[0].push(...codewords.slice(0, 24))
+  dataBlocks[1].push(...codewords.slice(24, 48))
+
+  return dataBlocks
+}
+
+const XOR = (a: boolean, b: boolean) => {
+  return (a || b) && !(a && b)
 }
 
 const ConvertToBits = (value: number, length: number) => {
   const bits: boolean[] = []
-  for (let i = 0; i < length; i++) bits.push((value >> i) % 2 === 1)
+  for (let i = 0; i < length; i++)
+    bits.push((value >> i) % 2 === 1)
   return bits
 }
-
-const AlphanumericTable = [
-  '0',
-  '1',
-  '2',
-  '3',
-  '4',
-  '5',
-  '6',
-  '7',
-  '8',
-  '9',
-  'A',
-  'B',
-  'C',
-  'D',
-  'E',
-  'F',
-  'G',
-  'H',
-  'I',
-  'J',
-  'K',
-  'L',
-  'M',
-  'N',
-  'O',
-  'P',
-  'Q',
-  'R',
-  'S',
-  'T',
-  'U',
-  'V',
-  'W',
-  'X',
-  'Y',
-  'Z',
-  ' ',
-  '$',
-  '%',
-  '*',
-  '+',
-  '-',
-  '.',
-  '/',
-  ':',
-]
