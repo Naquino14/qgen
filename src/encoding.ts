@@ -41,6 +41,8 @@ export const GenFormatInformation = (errorCorrectionLevel: ErrorCorrectionLevel,
   // see page 87 of ISO/IEC 18004:2015(E)
 
   // TODO: Learn polynomial long division
+
+
 }
 
 export const GenV4Payload = (payload: string /*, headerFunction: (payload: string) => boolean[]*/) => {
