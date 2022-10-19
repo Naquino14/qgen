@@ -1,4 +1,12 @@
-import { ByteModulo, AlphanumericTable } from "./patterns"
+import { ByteModulo, AlphanumericTable, ErrorCorrectionBits, MaskBits, CodewordPadding0, CodewordPadding1 } from "./patterns"
+
+export enum ErrorCorrectionLevel {
+  L, M, Q, H
+}
+
+export enum MaskPattern {
+  M000, M001, M010, M011, M100, M101, M110, M111
+}
 
 export const GenV10ECIheader = (payload: string) => {
   const payloadLength = payload.length
@@ -21,6 +29,18 @@ export const GenTerminator = () => {
   const terminator: boolean[] = []
   terminator.push(false, false, false, false, false, false, false, false, false)
   return terminator
+}
+
+export const GenFormatInformation = (errorCorrectionLevel: ErrorCorrectionLevel, maskingPattern: MaskPattern) => {
+  const formatInformation: boolean[] = []
+  formatInformation.push(...ErrorCorrectionBits(errorCorrectionLevel))
+  formatInformation.push(...MaskBits(maskingPattern))
+
+  // Calculate the error correction bits using Bose-Chaudhuri-Hocquenghem (15,5)
+  // idfk what that means so fingers crossed
+  // see page 87 of ISO/IEC 18004:2015(E)
+
+  // TODO: Learn polynomial long division
 }
 
 export const GenV4Payload = (payload: string /*, headerFunction: (payload: string) => boolean[]*/) => {
@@ -86,7 +106,7 @@ const BytewiseModulus = (codeword: boolean[]) => {
     r[i] = XOR(codeword[i], ByteModulo[i])
 }
 
-export const SplitDataCodewordsV4 = (codewords: boolean[][]) => {
+export const SplitDataCodewordsV4Q = (codewords: boolean[][]) => {
   // ok so bascally 
   // v4 has 100 codewords total
   // as of right now, the placeholder URL has 48 codewords (see index)
@@ -104,6 +124,15 @@ export const SplitDataCodewordsV4 = (codewords: boolean[][]) => {
   dataBlocks[1] = []
   dataBlocks[0].push(...codewords.slice(0, 24))
   dataBlocks[1].push(...codewords.slice(24, 48))
+
+  // pad missing codewords
+  const r0remaining = 24 - dataBlocks[0].length
+  const r1remaining = 24 - dataBlocks[1].length
+
+  for (let i = 0; i < r0remaining; i++)
+    dataBlocks[0].push(i % 2 === 0 ? CodewordPadding0 : CodewordPadding1)
+  for (let i = 0; i < r1remaining; i++)
+    dataBlocks[1].push(i % 2 === 0 ? CodewordPadding0 : CodewordPadding1)
 
   return dataBlocks
 }
