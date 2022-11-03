@@ -26,6 +26,8 @@ export const ByteModulo: boolean[] = [true, false, false, false, true, true, tru
 
 export const BCHFormatInfoMask: boolean[] = [true, false, true, false, true, false, false, false, false, false, true, false, false, true, false] // 101010000010010
 
+export const BCHFormatInfoGeneratorPoly: boolean[] = [true, false, true, false, false, true, true, false, true, true, true] // 10100110111 BCH(15,5)
+
 export const MaskFunction = (x: number, y: number, pattern: MaskPattern) => {
   switch (pattern) {
     case MaskPattern.M000:
