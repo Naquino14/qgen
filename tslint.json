@@ -3,6 +3,11 @@
         "tslint:recommended",
         "tslint-config-prettier"
     ],
+    "linterOptions": {
+        "exclude": [
+            "src/runner.ts"
+        ]
+    },
     "$schema": "http://json.schemastore.org/tslint",
     "rules": {
         "no-shadowed-variable": false,
