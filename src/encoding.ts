@@ -49,7 +49,7 @@ export const GenFormatInformation = (errorCorrectionLevel: ErrorCorrectionLevel,
 }
 
 
-export const RecusrsiveGenFormatErrorCorrection = (formatInformation: boolean[]): boolean[] => {
+export const RecusrsiveGenFormatErrorCorrection = (formatInformation: boolean[]): boolean[] => { // TODO: someth going on here!
   // the artical says that this is Reed-Solomon but the ISO standard says its BCH? Interesting...
   if (formatInformation.length <= 10) {
     // base case: the resulting format information error codewords is <= 10 bits long (padded to 10 bits inserting to the left)
