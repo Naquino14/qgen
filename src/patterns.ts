@@ -1,4 +1,4 @@
-import { ErrorCorrectionLevel, MaskPattern } from "./encoding"
+import { ErrorCorrectionLevel, MaskPattern } from './encoding'
 
 export const FinderPattern = [
   [true, true, true, true, true, true, true],
@@ -24,9 +24,37 @@ export const CodewordPadding1 = [false, false, false, true, false, false, false,
 export const ByteModulo: boolean[] = [true, false, false, false, true, true, true, false, true]
 // bitwise modulo is xor (% 2)
 
-export const BCHFormatInfoMask: boolean[] = [true, false, true, false, true, false, false, false, false, false, true, false, false, true, false] // 101010000010010
+export const BCHFormatInfoMask: boolean[] = [
+  true,
+  false,
+  true,
+  false,
+  true,
+  false,
+  false,
+  false,
+  false,
+  false,
+  true,
+  false,
+  false,
+  true,
+  false,
+] // 101010000010010
 
-export const BCHFormatInfoGeneratorPoly: boolean[] = [true, false, true, false, false, true, true, false, true, true, true] // 10100110111 BCH(15,5)
+export const BCHFormatInfoGeneratorPoly: boolean[] = [
+  true,
+  false,
+  true,
+  false,
+  false,
+  true,
+  true,
+  false,
+  true,
+  true,
+  true,
+] // 10100110111 BCH(15,5)
 
 export const MaskFunction = (x: number, y: number, pattern: MaskPattern) => {
   switch (pattern) {
@@ -39,13 +67,13 @@ export const MaskFunction = (x: number, y: number, pattern: MaskPattern) => {
     case MaskPattern.M011:
       return (x + y) % 3 === 0
     case MaskPattern.M100:
-      return ((x / 2) as number + (y / 3) as number) % 2 === 0
+      return ((((x / 2) as number) + y / 3) as number) % 2 === 0
     case MaskPattern.M101:
-      return (x * y) % 2 + (x * y) % 3 === 0
+      return ((x * y) % 2) + ((x * y) % 3) === 0
     case MaskPattern.M110:
-      return ((x * y) % 2 + (x * y) % 3) % 2 === 0
+      return (((x * y) % 2) + ((x * y) % 3)) % 2 === 0
     case MaskPattern.M111:
-      return ((x + y) % 2 + (x * y) % 3) % 2 === 0
+      return (((x + y) % 2) + ((x * y) % 3)) % 2 === 0
   }
 }
 
