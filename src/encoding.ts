@@ -67,39 +67,49 @@ export const GenFormatInformation = (
   // pad formatinformation with 10 bits
   formatInformation.push(...new Array<boolean>(10).fill(false))
   const errorCorrectionBits = RecusrsiveGenFormatErrorCorrection(formatInformation)
-  formatInformation.push(...errorCorrectionBits)
+  // xor the error correction bits with the format information
+  for (let i = 0; i < errorCorrectionBits.length; i++)
+    formatInformation[i] = XOR(formatInformation[i], errorCorrectionBits[i])
   return formatInformation
 }
 
-export const RecusrsiveGenFormatErrorCorrection = (formatInformation: boolean[]): boolean[] => {
-  // TODO: someth going on here!
+export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]): boolean[] => {
   // the artical says that this is Reed-Solomon but the ISO standard says its BCH? Interesting...
-  if (formatInformation.length <= 10) {
+  const formatInfo: boolean[] = []
+  incomingFormatInfo.forEach((e) => formatInfo.push(e))
+  if (formatInfo.length <= 10) {
     // base case: the resulting format information error codewords is <= 10 bits long (padded to 10 bits inserting to the left)
-    LeftPadArray(formatInformation, 10)
-    return formatInformation
+    LeftPadArray(formatInfo, 10)
+    return formatInfo
   } else {
     // recursive case: we are larger than 10 bits long.
     // delete all 0 bits to the left of the format information
     // pad 0 bits to the right of the generator polynomial to match with the size of the format information
     // and xor with the generator polynomial then recurse
 
-    // removing the bits to the left:
-    const firstTrue = formatInformation.indexOf(true)
-    const current = firstTrue === 0 ? formatInformation : formatInformation.slice(0, firstTrue)
+    // remove the bits to the left:
+    let firstTrue = formatInfo.indexOf(true)
+    if (firstTrue !== 0)
+      formatInfo.splice(0, firstTrue)
 
     // pad the generator polynomial:
-    const currentGenerator = BCHFormatInfoGeneratorPoly
-    if (currentGenerator.length < current.length)
-      RightPadArray(currentGenerator, current.length - currentGenerator.length) // potential point of error, I didnt write this method
+    const currentGenerator: boolean[] = []
+    BCHFormatInfoGeneratorPoly.forEach(e => currentGenerator.push(e))
+    if (currentGenerator.length < formatInfo.length)
+      RightPadArray(currentGenerator, formatInfo.length - currentGenerator.length) // potential point of error, I didnt write this method
 
-    // xor the current bits with the padded generator polynomial
-    const result = current
-    current.forEach((e, i) => {
-      result[i] = XOR(e, BCHFormatInfoMask[i])
-    })
+    // someth broke after this point
 
-    return result
+    // xor the current bits with the padded generator polynomial  
+    for (let i = 0; i < formatInfo.length; i++)
+      formatInfo[i] = XOR(formatInfo[i], currentGenerator[i])
+
+    // removing the bits to the left again:  
+    firstTrue = formatInfo.indexOf(true)
+    if (firstTrue !== 0)
+      formatInfo.splice(0, firstTrue)
+
+    return formatInfo
   }
 }
 
@@ -205,16 +215,11 @@ const ConvertToBits = (value: number, length: number) => {
 }
 
 const LeftPadArray = (array: boolean[], endSize: number) => {
-  if (array.length === endSize) return
-  const pad = endSize - array.length
-  const padArray = new Array(pad).fill(false)
-  array.push(...padArray)
+  const padArray = new Array(endSize - array.length).fill(false)
+  array.unshift(...padArray)
 }
 
-const RightPadArray = (array: boolean[], endSize: number) => {
-  // TODO: check if this works
-  if (array.length === endSize) return
-  const pad = endSize - array.length
-  const padArray = new Array(pad).fill(false)
-  array.unshift(...padArray)
+const RightPadArray = (array: boolean[], toAdd: number) => {
+  const padArray = new Array(toAdd).fill(false)
+  array.push(...padArray)
 }
