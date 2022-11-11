@@ -65,11 +65,24 @@ export const GenFormatInformation = (
 
   // TODO: Learn polynomial long division
   // pad formatinformation with 10 bits
+  const unpaddedFormatInformation = [...formatInformation]
   formatInformation.push(...new Array<boolean>(10).fill(false))
+  // remove the bits to the left:
+  const firstTrue = formatInformation.indexOf(true)
+  if (firstTrue !== 0)
+    formatInformation.splice(0, firstTrue)
+
   const errorCorrectionBits = RecusrsiveGenFormatErrorCorrection(formatInformation)
+  unpaddedFormatInformation.push(...errorCorrectionBits)
+  // clear formatInformation
+  formatInformation.splice(0, formatInformation.length)
+  formatInformation.push(...unpaddedFormatInformation)
+
   // xor the error correction bits with the format information
+  const finalFormatInformation = new Array<boolean>(15).fill(false)
   for (let i = 0; i < errorCorrectionBits.length; i++)
-    formatInformation[i] = XOR(formatInformation[i], errorCorrectionBits[i])
+    finalFormatInformation[i] = XOR(formatInformation[i], BCHFormatInfoMask[i])
+  // console.log(`${unpaddedFormatInformation.map((e) => e ? 1 : 0).join('')} ^ ${BCHFormatInfoMask.map((e) => e ? 1 : 0).join('')} = ${finalFormatInformation.map((e) => e ? 1 : 0).join('')}`)
   return formatInformation
 }
 
@@ -87,29 +100,21 @@ export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]
     // pad 0 bits to the right of the generator polynomial to match with the size of the format information
     // and xor with the generator polynomial then recurse
 
-    // remove the bits to the left:
-    let firstTrue = formatInfo.indexOf(true)
-    if (firstTrue !== 0)
-      formatInfo.splice(0, firstTrue)
-
     // pad the generator polynomial:
     const currentGenerator: boolean[] = []
     BCHFormatInfoGeneratorPoly.forEach(e => currentGenerator.push(e))
     if (currentGenerator.length < formatInfo.length)
       RightPadArray(currentGenerator, formatInfo.length - currentGenerator.length) // potential point of error, I didnt write this method
 
-    // someth broke after this point
-
     // xor the current bits with the padded generator polynomial  
     for (let i = 0; i < formatInfo.length; i++)
       formatInfo[i] = XOR(formatInfo[i], currentGenerator[i])
 
-    // removing the bits to the left again:  
-    firstTrue = formatInfo.indexOf(true)
+    // removing the bits to the left:  
+    const firstTrue = formatInfo.indexOf(true)
     if (firstTrue !== 0)
       formatInfo.splice(0, firstTrue)
-
-    return formatInfo
+    return RecusrsiveGenFormatErrorCorrection(formatInfo) // lmfao i never called this before 💀💀💀💀💀
   }
 }
 
