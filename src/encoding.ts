@@ -78,10 +78,8 @@ export const GenFormatInformation = (
   formatInformation.push(...unpaddedFormatInformation)
 
   // xor the error correction bits with the format information
-  const finalFormatInformation = new Array<boolean>(15).fill(false)
-  for (let i = 0; i < errorCorrectionBits.length; i++)
-    finalFormatInformation[i] = XOR(formatInformation[i], BCHFormatInfoMask[i])
-  // console.log(`${unpaddedFormatInformation.map((e) => e ? 1 : 0).join('')} ^ ${BCHFormatInfoMask.map((e) => e ? 1 : 0).join('')} = ${finalFormatInformation.map((e) => e ? 1 : 0).join('')}`)
+  for (let i = 0; i < formatInformation.length; i++)
+    formatInformation[i] = XOR(formatInformation[i], BCHFormatInfoMask[i])
   return formatInformation
 }
 
