@@ -69,8 +69,7 @@ export const GenFormatInformation = (
   formatInformation.push(...new Array<boolean>(10).fill(false))
   // remove the bits to the left:
   const firstTrue = formatInformation.indexOf(true)
-  if (firstTrue !== 0)
-    formatInformation.splice(0, firstTrue)
+  if (firstTrue !== 0) formatInformation.splice(0, firstTrue)
 
   const errorCorrectionBits = RecusrsiveGenFormatErrorCorrection(formatInformation)
   unpaddedFormatInformation.push(...errorCorrectionBits)
@@ -102,18 +101,16 @@ export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]
 
     // pad the generator polynomial:
     const currentGenerator: boolean[] = []
-    BCHFormatInfoGeneratorPoly.forEach(e => currentGenerator.push(e))
+    BCHFormatInfoGeneratorPoly.forEach((e) => currentGenerator.push(e))
     if (currentGenerator.length < formatInfo.length)
       RightPadArray(currentGenerator, formatInfo.length - currentGenerator.length) // potential point of error, I didnt write this method
 
-    // xor the current bits with the padded generator polynomial  
-    for (let i = 0; i < formatInfo.length; i++)
-      formatInfo[i] = XOR(formatInfo[i], currentGenerator[i])
+    // xor the current bits with the padded generator polynomial
+    for (let i = 0; i < formatInfo.length; i++) formatInfo[i] = XOR(formatInfo[i], currentGenerator[i])
 
-    // removing the bits to the left:  
+    // removing the bits to the left:
     const firstTrue = formatInfo.indexOf(true)
-    if (firstTrue !== 0)
-      formatInfo.splice(0, firstTrue)
+    if (firstTrue !== 0) formatInfo.splice(0, firstTrue)
     return RecusrsiveGenFormatErrorCorrection(formatInfo) // lmfao i never called this before 💀💀💀💀💀
   }
 }
