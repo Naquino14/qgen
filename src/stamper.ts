@@ -1,4 +1,4 @@
-import { ErrorCorrectionLevel, GenFormatInformation, MaskPattern, XOR, } from './encoding'
+import { ErrorCorrectionLevel, GenFormatInformation, MaskPattern, XOR } from './encoding'
 import { AlignmentPattern, FinderPattern } from './patterns'
 
 export const StampCode = (base: boolean[][], stamp: boolean[][], x: number = 0, y: number = 0) => {
@@ -34,26 +34,21 @@ export const StampFormatInfo = (base: boolean[][], formatInfo: boolean[]) => {
   const n = base.length
   // create a final stamp to stamp on top of the base
   const finalStamp: boolean[][] = [] // TODO: cant initialize this tf???
-  for (let i = 0; i < n; i++)
-    finalStamp[i] = new Array(n).fill(false)
+  for (let i = 0; i < n; i++) finalStamp[i] = new Array(n).fill(false)
 
   // place all the bits in the first placement
-  for (let i = 0; i < 6; i++)
-    finalStamp[8][i] = formatInfo[i]
+  for (let i = 0; i < 6; i++) finalStamp[8][i] = formatInfo[i]
   finalStamp[8][7] = formatInfo[6]
   finalStamp[8][8] = formatInfo[7]
 
   finalStamp[7][8] = formatInfo[8]
-  for (let i = 5; i >= 0; i--)
-    finalStamp[i][8] = formatInfo[14 - i]
+  for (let i = 5; i >= 0; i--) finalStamp[i][8] = formatInfo[14 - i]
 
   // place all the bits in the second placement
-  for (let i = 0; i < 7; i++)
-    finalStamp[n - 1 - i][8] = formatInfo[i]
+  for (let i = 0; i < 7; i++) finalStamp[n - 1 - i][8] = formatInfo[i]
   finalStamp[n - 8][8] = true
 
-  for (let i = 0; i < 8; i++)
-    finalStamp[8][n - 8 + i] = formatInfo[i + 7]
+  for (let i = 0; i < 8; i++) finalStamp[8][n - 8 + i] = formatInfo[i + 7]
 
   // stamp the format information on the base
 
