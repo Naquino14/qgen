@@ -204,7 +204,7 @@ export const SplitDataCodewordsV4Q = (codewords: boolean[][]) => {
   return dataBlocks
 }
 
-const XOR = (a: boolean, b: boolean) => {
+export const XOR = (a: boolean, b: boolean) => {
   return (a || b) && !(a && b)
 }
 
