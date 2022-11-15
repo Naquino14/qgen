@@ -110,6 +110,7 @@ export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]
 }
 
 export const GenV4Payload = (payload: string /*, headerFunction: (payload: string) => boolean[]*/) => {
+  // this method works explicitely for byte mode
   payload = payload.toUpperCase()
   const payloadLength = payload.length
   const payloadBits: boolean[] = []
@@ -120,8 +121,7 @@ export const GenV4Payload = (payload: string /*, headerFunction: (payload: strin
   const header = GenV4ByteModeHeader(payload)
   payloadBits.push(...header)
 
-  // step 1: convert payload to char codes
-  // TODO: im not sure what this is supposed to do, recheck code
+  // step 1: encode payload with byte mode
   const charCodes: number[] = []
   for (let i = 0; i < payloadLength; i++) {
     const charCode = ByteTableMap.get(payload[i])
@@ -129,22 +129,14 @@ export const GenV4Payload = (payload: string /*, headerFunction: (payload: strin
     charCodes.push(charCode)
   }
 
-  // step 2: group char codes into groups of 2
-  const charCodeGroups: number[][] = []
-  for (let i = 0; i < payloadLength; i += 2) {
-    const group: number[] = []
-    group.push(charCodes[i])
-    if (i + 1 < payloadLength) group.push(charCodes[i + 1])
-    charCodeGroups.push(group)
+  // step 2: convert to bits
+  for (let i = 0; i < charCodes.length; i++) {
+    const charCode = charCodes[i]
+    const charCodeBits = ConvertToBits(charCode, 8)
+    payloadBits.push(...charCodeBits)
   }
 
-  // step 3: convert char codes to bits (11 bits per group) and push to payload bits
-  for (const group of charCodeGroups) {
-    if (group.length === 1) payloadBits.push(...ConvertToBits(group[0], 6))
-    else payloadBits.push(...ConvertToBits(group[0] * 45 + group[1], 11))
-  }
-
-  // step 4: add terminator
+  // step 3: add terminator
   payloadBits.push(...GenTerminator())
 
   return payloadBits

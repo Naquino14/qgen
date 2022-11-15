@@ -165,6 +165,7 @@ AlphanumericTable.forEach((e, i) => {
 })
 
 export const ByteTable = [
+  'NUL',
   'SOH',
   'STX',
   'ETX',
