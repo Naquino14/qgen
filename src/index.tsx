@@ -4,8 +4,7 @@ import { PreStampV4 } from './stamper'
 import {
   BitpayloadToCodewords,
   ErrorCorrectionLevel,
-  GenV10ECIheader,
-  GenV4ECIheader,
+  GenV4ByteModeHeader,
   GenV4Payload,
   MaskPattern,
 } from './encoding'
@@ -45,7 +44,7 @@ export const QrRenderer: React.FC<Props> = ({
   // for testing purposes, override the payload
   payload = 'http://localhost:3000/&eventid=67897654467898765&uid=1234567890&tag=0'
 
-  const bitstreamHeader = GenV4ECIheader(payload)
+  const bitstreamHeader = GenV4ByteModeHeader(payload)
   const bitStream = GenV4Payload(payload)
   const codewords = BitpayloadToCodewords(bitStream)
 

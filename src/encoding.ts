@@ -7,6 +7,8 @@ import {
   CodewordPadding1,
   BCHFormatInfoMask,
   BCHFormatInfoGeneratorPoly,
+  AlphanumericTableMap,
+  ByteTableMap,
 } from './patterns'
 
 export enum ErrorCorrectionLevel {
@@ -27,18 +29,12 @@ export enum MaskPattern {
   M111,
 }
 
-export const GenV10ECIheader = (payload: string) => {
+export const GenV4ByteModeHeader = (payload: string) => {
+  // See 7.4.5 page 27 of ISO/IEC 18004:2015(E)
   const payloadLength = payload.length
-  const alphaNumericECI = [false, false, true, false]
+  const alphaNumericIndicator = [false, true, false, false] // 0100
   const header: boolean[] = []
-  header.push(...alphaNumericECI)
-}
-
-export const GenV4ECIheader = (payload: string) => {
-  const payloadLength = payload.length
-  const alphaNumericECI = [false, false, true, false]
-  const header: boolean[] = []
-  header.push(...alphaNumericECI)
+  header.push(...alphaNumericIndicator)
   const charCountIndicator = ConvertToBits(payloadLength, 11)
   header.push(...charCountIndicator)
   return header
@@ -121,10 +117,17 @@ export const GenV4Payload = (payload: string /*, headerFunction: (payload: strin
   // generate and add header
   // const header = headerFunction(payload)
   // payloadBits.push(...header)
+  const header = GenV4ByteModeHeader(payload)
+  payloadBits.push(...header)
 
   // step 1: convert payload to char codes
+  // TODO: im not sure what this is supposed to do, recheck code
   const charCodes: number[] = []
-  for (let i = 0; i < payloadLength; i++) charCodes.push(AlphanumericTable.indexOf(payload[i]))
+  for (let i = 0; i < payloadLength; i++) {
+    const charCode = ByteTableMap.get(payload[i])
+    if (charCode === undefined) throw new Error(`Invalid character in payload: ${payload[i]}`)
+    charCodes.push(charCode)
+  }
 
   // step 2: group char codes into groups of 2
   const charCodeGroups: number[][] = []
