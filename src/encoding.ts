@@ -40,9 +40,11 @@ export const GenV4ByteModeHeader = (payload: string) => {
   return header
 }
 
-export const GenTerminator = () => {
+export const GenTerminator = (payloadSize: number) => {
   const terminator: boolean[] = []
-  terminator.push(false, false, false, false, false, false, false, false, false)
+  if (payloadSize % 8 === 0)
+    return terminator
+  terminator.push(...new Array<boolean>(payloadSize % 8).fill(false))
   return terminator
 }
 
@@ -137,7 +139,7 @@ export const GenV4Payload = (payload: string /*, headerFunction: (payload: strin
   }
 
   // step 3: add terminator
-  payloadBits.push(...GenTerminator())
+  payloadBits.push(...GenTerminator(payloadBits.length))
 
   return payloadBits
 }
