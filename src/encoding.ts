@@ -35,7 +35,7 @@ export const GenV4ByteModeHeader = (payload: string) => {
   const alphaNumericIndicator = [false, true, false, false] // 0100
   const header: boolean[] = []
   header.push(...alphaNumericIndicator)
-  const charCountIndicator = ConvertToBits(payloadLength, 11)
+  const charCountIndicator = ConvertToBits(payloadLength, 8) // ISO/IEC 18004:2015(E) page 31 table 3
   header.push(...charCountIndicator)
   return header
 }
