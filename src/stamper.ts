@@ -55,10 +55,7 @@ export const StampFormatInfo = (base: boolean[][], formatInfo: boolean[]) => {
   StampXOR(base, finalStamp)
 }
 
-export const PreStampV4 = (
-  errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.M,
-  maskPattern: MaskPattern = MaskPattern.M110,
-) => {
+export const PreStampV4 = (errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.L) => {
   let qr: boolean[][] = []
 
   for (let i = 0; i < 33; i++) {
@@ -79,6 +76,9 @@ export const PreStampV4 = (
     qr[i][6] = o
     qr[6][i] = o
   }
+
+  // TODO: mask pattern ranking
+  const maskPattern = MaskPattern.M000
 
   // stamp format information
   const formatInfo = GenFormatInformation(errorCorrectionLevel, maskPattern)

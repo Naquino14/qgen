@@ -18,6 +18,13 @@ export enum ErrorCorrectionLevel {
   H,
 }
 
+// see table 9 column 8 (v4) page 46 of ISO/IEC 18004:2015(E)
+export const QRv4DataCapacities = new Map<ErrorCorrectionLevel, number>()
+QRv4DataCapacities.set(ErrorCorrectionLevel.L, 78)
+QRv4DataCapacities.set(ErrorCorrectionLevel.M, 62)
+QRv4DataCapacities.set(ErrorCorrectionLevel.Q, 46)
+QRv4DataCapacities.set(ErrorCorrectionLevel.H, 34)
+
 export enum MaskPattern {
   M000,
   M001,
@@ -46,6 +53,16 @@ export const GenTerminator = (payloadSize: number) => {
     return terminator
   terminator.push(...new Array<boolean>(payloadSize % 8).fill(false))
   return terminator
+}
+
+export const GenCodewordPadding = (errorCorrectionLevel: ErrorCorrectionLevel, codewordCount: number) => {
+  const padding: boolean[] = []
+  const remainingCodewordCapacity = QRv4DataCapacities.get(errorCorrectionLevel)! - codewordCount / 8
+  if (remainingCodewordCapacity < 0)
+    throw new Error('Codeword count exceeds capacity')
+  for (let i = 0; i < remainingCodewordCapacity; i++)
+    padding.push(...i % 2 === 0 ? CodewordPadding0 : CodewordPadding1) // see 7.4.10 page 40 of ISO/IEC 18004:2015(E)
+  return padding
 }
 
 export const GenFormatInformation = (
@@ -111,7 +128,7 @@ export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]
   }
 }
 
-export const GenV4Payload = (payload: string /*, headerFunction: (payload: string) => boolean[]*/) => {
+export const GenV4Payload = (payload: string, errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.L) => {
   // this method works explicitely for byte mode
   payload = payload.toUpperCase()
   const payloadLength = payload.length
@@ -132,14 +149,13 @@ export const GenV4Payload = (payload: string /*, headerFunction: (payload: strin
   }
 
   // step 2: convert to bits
-  for (let i = 0; i < charCodes.length; i++) {
-    const charCode = charCodes[i]
-    const charCodeBits = ConvertToBits(charCode, 8)
-    payloadBits.push(...charCodeBits)
-  }
+  charCodes.forEach(code => payloadBits.push(...ConvertToBits(code, 8)));
 
   // step 3: add terminator
   payloadBits.push(...GenTerminator(payloadBits.length))
+
+  // step 4: add padding
+  payloadBits.push(...GenCodewordPadding(errorCorrectionLevel, payloadBits.length))
 
   return payloadBits
 }
