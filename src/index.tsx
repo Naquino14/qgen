@@ -1,13 +1,7 @@
 import React from 'react'
 import { FinderPattern, AlignmentPattern } from './patterns'
 import { PreStampV4 } from './stamper'
-import {
-  BitpayloadToCodewords,
-  ErrorCorrectionLevel,
-  GenV4ByteModeHeader,
-  GenV4Payload,
-  MaskPattern,
-} from './encoding'
+import { BitpayloadToCodewords, ErrorCorrectionLevel, GenV4ByteModeHeader, GenV4Payload, MaskPattern } from './encoding'
 
 const v10wh = 66
 const v4wh = 44

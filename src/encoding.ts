@@ -49,8 +49,7 @@ export const GenV4ByteModeHeader = (payload: string) => {
 
 export const GenTerminator = (payloadSize: number) => {
   const terminator: boolean[] = []
-  if (payloadSize % 8 === 0)
-    return terminator
+  if (payloadSize % 8 === 0) return terminator
   terminator.push(...new Array<boolean>(payloadSize % 8).fill(false))
   return terminator
 }
@@ -58,10 +57,9 @@ export const GenTerminator = (payloadSize: number) => {
 export const GenCodewordPadding = (errorCorrectionLevel: ErrorCorrectionLevel, codewordCount: number) => {
   const padding: boolean[] = []
   const remainingCodewordCapacity = QRv4DataCapacities.get(errorCorrectionLevel)! - codewordCount / 8
-  if (remainingCodewordCapacity < 0)
-    throw new Error('Codeword count exceeds capacity')
+  if (remainingCodewordCapacity < 0) throw new Error('Codeword count exceeds capacity')
   for (let i = 0; i < remainingCodewordCapacity; i++)
-    padding.push(...i % 2 === 0 ? CodewordPadding0 : CodewordPadding1) // see 7.4.10 page 40 of ISO/IEC 18004:2015(E)
+    padding.push(...(i % 2 === 0 ? CodewordPadding0 : CodewordPadding1)) // see 7.4.10 page 40 of ISO/IEC 18004:2015(E)
   return padding
 }
 
@@ -149,7 +147,7 @@ export const GenV4Payload = (payload: string, errorCorrectionLevel: ErrorCorrect
   }
 
   // step 2: convert to bits
-  charCodes.forEach(code => payloadBits.push(...ConvertToBits(code, 8)));
+  charCodes.forEach((code) => payloadBits.push(...ConvertToBits(code, 8)))
 
   // step 3: add terminator
   payloadBits.push(...GenTerminator(payloadBits.length))

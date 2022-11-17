@@ -288,7 +288,7 @@ export const ByteTable = [
   'w',
   'x',
   'y',
-  'z'
+  'z',
 ]
 
 // See 7.4.5 page 27 of ISO/IEC 18004:2015(E)
