@@ -21,6 +21,11 @@
     "type": "git",
     "url": "git+https://naquino14@github.com/naquino14/qgen.git"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://npm.pkg.github.com/",
+    "tag": "latest"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
