@@ -1,7 +1,7 @@
 import React from 'react'
 import { FinderPattern, AlignmentPattern } from './patterns'
 import { PreStampV4 } from './stamper'
-import { BitpayloadToCodewords, ErrorCorrectionLevel, GenV4ByteModeHeader, GenV4Payload, MaskPattern } from './encoding'
+import { PayloadToCodewords, ErrorCorrectionLevel, GenV4ByteModeHeader, GenV4Payload, MaskPattern } from './encoding'
 
 const v10wh = 66
 const v4wh = 44
@@ -40,7 +40,7 @@ export const QrRenderer: React.FC<Props> = ({
 
   const bitstreamHeader = GenV4ByteModeHeader(payload)
   const bitStream = GenV4Payload(payload)
-  const codewords = BitpayloadToCodewords(bitStream)
+  const codewords = PayloadToCodewords(bitStream)
 
   // let bitstream = GenV10ECIheader(payload)
 

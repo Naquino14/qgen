@@ -19,11 +19,12 @@ export enum ErrorCorrectionLevel {
 }
 
 // see table 9 column 8 (v4) page 46 of ISO/IEC 18004:2015(E)
+// or table 7 column 8 (v4) page 41 of ISO/IEC 18004:2015(E)
 export const QRv4DataCapacities = new Map<ErrorCorrectionLevel, number>()
-QRv4DataCapacities.set(ErrorCorrectionLevel.L, 78)
-QRv4DataCapacities.set(ErrorCorrectionLevel.M, 62)
-QRv4DataCapacities.set(ErrorCorrectionLevel.Q, 46)
-QRv4DataCapacities.set(ErrorCorrectionLevel.H, 34)
+QRv4DataCapacities.set(ErrorCorrectionLevel.L, 80)
+QRv4DataCapacities.set(ErrorCorrectionLevel.M, 64)
+QRv4DataCapacities.set(ErrorCorrectionLevel.Q, 48)
+QRv4DataCapacities.set(ErrorCorrectionLevel.H, 36)
 
 export enum MaskPattern {
   M000,
@@ -158,7 +159,8 @@ export const GenV4Payload = (payload: string, errorCorrectionLevel: ErrorCorrect
   return payloadBits
 }
 
-export const BitpayloadToCodewords = (payload: boolean[]) => {
+export const PayloadToCodewords = (payload: boolean[]) => {
+  // NOTE: the payload must be properly terminated and padded before this method is called
   // split payload into codewords
   const codewords: boolean[][] = []
   // loop over the payloads
@@ -170,14 +172,46 @@ export const BitpayloadToCodewords = (payload: boolean[]) => {
     if (codewords[c].length === 8) c++
     i++
   }
-
-  // pad final codeword if needed
-  if (codewords[c].length < 8) {
-    const pad = 8 - codewords[c].length
-    const padArray = new Array(pad).fill(false)
-    codewords[c].push(...padArray)
-  }
   return codewords
+}
+
+export const QRv4CodewordsToPreECCBlocks = (codewords: boolean[][], errorCorrectionLevel: ErrorCorrectionLevel) => {
+  const eccBlocks: boolean[][][] = []
+  // determine the block count
+  const eccBlockCount = ((): number => {
+    switch (errorCorrectionLevel) {
+      case ErrorCorrectionLevel.L:
+        return 1
+      case ErrorCorrectionLevel.M:
+      case ErrorCorrectionLevel.Q:
+        return 2
+      case ErrorCorrectionLevel.H:
+        return 4
+    }
+  })()
+
+  // determine the block sizes
+  const eccGroupSize = ((): number => {
+    switch (errorCorrectionLevel) {
+      case ErrorCorrectionLevel.L:
+        return 80
+      case ErrorCorrectionLevel.M:
+        return 32
+      case ErrorCorrectionLevel.Q:
+        return 24
+      case ErrorCorrectionLevel.H:
+        return 9
+    }
+  })()
+
+  for (let b = 0; b < eccBlockCount; b++) {
+    eccBlocks[b] = []
+    for (let i = 0; i < eccGroupSize; i++) {
+      // uhh 
+      // TODO
+    }
+  }
+
 }
 
 const BytewiseModulus = (codeword: boolean[]) => {
