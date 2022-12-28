@@ -207,11 +207,10 @@ export const QRv4CodewordsToPreECCBlocks = (codewords: boolean[][], errorCorrect
   for (let b = 0; b < eccBlockCount; b++) {
     eccBlocks[b] = []
     for (let i = 0; i < eccGroupSize; i++) {
-      // uhh 
+      // uhh
       // TODO
     }
   }
-
 }
 
 const BytewiseModulus = (codeword: boolean[]) => {
