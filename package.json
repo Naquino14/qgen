@@ -23,7 +23,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "https://npm.pkg.github.com/",
+    "@naquino14:registry": "https://npm.pkg.github.com/",
     "tag": "latest"
   },
   "keywords": [],
