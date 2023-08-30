@@ -175,6 +175,7 @@ export const PayloadToCodewords = (payload: boolean[]) => {
   return codewords
 }
 
+/// result is ecc[block][group][codeword]
 export const QRv4CodewordsToPreECCBlocks = (codewords: boolean[][], errorCorrectionLevel: ErrorCorrectionLevel) => {
   const eccBlocks: boolean[][][] = []
   // determine the block count
@@ -206,11 +207,13 @@ export const QRv4CodewordsToPreECCBlocks = (codewords: boolean[][], errorCorrect
 
   for (let b = 0; b < eccBlockCount; b++) {
     eccBlocks[b] = []
-    for (let i = 0; i < eccGroupSize; i++) {
-      // uhh
-      // TODO
+    for (let g = 0; g < eccGroupSize; g++) {
+      // copy codeword to its slot
+      eccBlocks[b][g] = []
+      codewords[g + (b * eccGroupSize)].forEach(c => eccBlocks[b][g].push(c))
     }
   }
+  return eccBlocks
 }
 
 const BytewiseModulus = (codeword: boolean[]) => {
