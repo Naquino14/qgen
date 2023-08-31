@@ -50,7 +50,8 @@ export const GenV4ByteModeHeader = (payload: string) => {
 
 export const GenTerminator = (payloadSize: number) => {
   const terminator: boolean[] = []
-  if (payloadSize % 8 === 0) return terminator
+  if (payloadSize % 8 === 0)
+    return terminator
   terminator.push(...new Array<boolean>(payloadSize % 8).fill(false))
   return terminator
 }
@@ -58,7 +59,8 @@ export const GenTerminator = (payloadSize: number) => {
 export const GenCodewordPadding = (errorCorrectionLevel: ErrorCorrectionLevel, codewordCount: number) => {
   const padding: boolean[] = []
   const remainingCodewordCapacity = QRv4DataCapacities.get(errorCorrectionLevel)! - codewordCount / 8
-  if (remainingCodewordCapacity < 0) throw new Error('Codeword count exceeds capacity')
+  if (remainingCodewordCapacity < 0)
+    throw new Error('Codeword count exceeds capacity')
   for (let i = 0; i < remainingCodewordCapacity; i++)
     padding.push(...(i % 2 === 0 ? CodewordPadding0 : CodewordPadding1)) // see 7.4.10 page 40 of ISO/IEC 18004:2015(E)
   return padding
@@ -83,7 +85,8 @@ export const GenFormatInformation = (
   formatInformation.push(...new Array<boolean>(10).fill(false))
   // remove the bits to the left:
   const firstTrue = formatInformation.indexOf(true)
-  if (firstTrue !== 0) formatInformation.splice(0, firstTrue)
+  if (firstTrue !== 0)
+    formatInformation.splice(0, firstTrue)
 
   const errorCorrectionBits = RecusrsiveGenFormatErrorCorrection(formatInformation)
   unpaddedFormatInformation.push(...errorCorrectionBits)
@@ -118,11 +121,13 @@ export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]
       RightPadArray(currentGenerator, formatInfo.length - currentGenerator.length) // potential point of error, I didnt write this method
 
     // xor the current bits with the padded generator polynomial
-    for (let i = 0; i < formatInfo.length; i++) formatInfo[i] = XOR(formatInfo[i], currentGenerator[i])
+    for (let i = 0; i < formatInfo.length; i++)
+      formatInfo[i] = XOR(formatInfo[i], currentGenerator[i])
 
     // removing the bits to the left:
     const firstTrue = formatInfo.indexOf(true)
-    if (firstTrue !== 0) formatInfo.splice(0, firstTrue)
+    if (firstTrue !== 0)
+      formatInfo.splice(0, firstTrue)
     return RecusrsiveGenFormatErrorCorrection(formatInfo) // lmfao i never called this before 💀💀💀💀💀
   }
 }
@@ -143,7 +148,8 @@ export const GenV4Payload = (payload: string, errorCorrectionLevel: ErrorCorrect
   const charCodes: number[] = []
   for (let i = 0; i < payloadLength; i++) {
     const charCode = ByteTableMap.get(payload[i])
-    if (charCode === undefined) throw new Error(`Invalid character in payload: ${payload[i]}`)
+    if (charCode === undefined)
+      throw new Error(`Invalid character in payload: ${payload[i]}`)
     charCodes.push(charCode)
   }
 
@@ -169,7 +175,8 @@ export const PayloadToCodewords = (payload: boolean[]) => {
   while (i < payload.length) {
     codewords[c] ??= []
     codewords[c].push(payload[i] ?? false)
-    if (codewords[c].length === 8) c++
+    if (codewords[c].length === 8)
+      c++
     i++
   }
   return codewords
@@ -219,7 +226,8 @@ export const QRv4CodewordsToPreECCBlocks = (codewords: boolean[][], errorCorrect
 const BytewiseModulus = (codeword: boolean[]) => {
   const r: boolean[] = []
   r.fill(false, 8)
-  for (let i = 0; i < codeword.length; i++) r[i] = XOR(codeword[i], ByteModulo[i])
+  for (let i = 0; i < codeword.length; i++)
+    r[i] = XOR(codeword[i], ByteModulo[i])
 }
 
 export const SplitDataCodewordsV4Q = (codewords: boolean[][]) => {
@@ -245,8 +253,10 @@ export const SplitDataCodewordsV4Q = (codewords: boolean[][]) => {
   const r0remaining = 24 - dataBlocks[0].length
   const r1remaining = 24 - dataBlocks[1].length
 
-  for (let i = 0; i < r0remaining; i++) dataBlocks[0].push(i % 2 === 0 ? CodewordPadding0 : CodewordPadding1)
-  for (let i = 0; i < r1remaining; i++) dataBlocks[1].push(i % 2 === 0 ? CodewordPadding0 : CodewordPadding1)
+  for (let i = 0; i < r0remaining; i++)
+    dataBlocks[0].push(i % 2 === 0 ? CodewordPadding0 : CodewordPadding1)
+  for (let i = 0; i < r1remaining; i++)
+    dataBlocks[1].push(i % 2 === 0 ? CodewordPadding0 : CodewordPadding1)
 
   return dataBlocks
 }
@@ -257,7 +267,8 @@ export const XOR = (a: boolean, b: boolean) => {
 
 const ConvertToBits = (value: number, length: number) => {
   const bits: boolean[] = []
-  for (let i = 0; i < length; i++) bits.push((value >> i) % 2 === 1)
+  for (let i = 0; i < length; i++)
+    bits.push((value >> i) % 2 === 1)
   return bits
 }
 

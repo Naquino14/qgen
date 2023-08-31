@@ -22,8 +22,17 @@ export const AlignmentPattern = [
 export const CodewordPadding0 = [true, true, true, false, true, true, false, false] // 11101100
 export const CodewordPadding1 = [false, false, false, true, false, false, false, true] // 00010001
 
-export const ByteModulo: boolean[] = [true, false, false, false, true, true, true, false, true]
-// bitwise modulo is xor (% 2)
+export const ByteModulo: boolean[] = [
+  true,
+  false,
+  false,
+  false,
+  true,
+  true,
+  true,
+  false,
+  true
+] // 100011101 GF(256) Bytewise Modulus
 
 export const BCHFormatInfoMask: boolean[] = [
   true,
