@@ -64,7 +64,6 @@ export const GenGeneratorPoly = (degree: number): number[] => {
       for (let j = 0; j < stg.length; j += 2)
         if (stg[j + 1] == xExp) {
           // recall addition in GF(256) is just XOR
-          // TODO swap with alpha value, and xor, then swap back to alpha
           // swap the alpha exponent with the alpha value
           // swap the alpha exponent of what we are adding with the alpha value
           // xor the alpha values (addition under GF(256))
