@@ -56,7 +56,7 @@ export const GenTerminator = (payloadSize: number) => {
   return terminator
 }
 
-export const GenCodewordPadding = (errorCorrectionLevel: ErrorCorrectionLevel, codewordCount: number) => {
+export const Genv4CodewordPadding = (errorCorrectionLevel: ErrorCorrectionLevel, codewordCount: number) => {
   const padding: boolean[] = []
   const remainingCodewordCapacity = QRv4DataCapacities.get(errorCorrectionLevel)! - codewordCount / 8
   if (remainingCodewordCapacity < 0)
@@ -70,16 +70,13 @@ export const GenFormatInformation = (
   errorCorrectionLevel: ErrorCorrectionLevel,
   maskingPattern: MaskPattern,
 ): boolean[] => {
-  // TODO: finish this
   const formatInformation: boolean[] = []
   formatInformation.push(...ErrorCorrectionBits(errorCorrectionLevel))
   formatInformation.push(...MaskBits(maskingPattern))
 
   // Calculate the error correction bits using Bose-Chaudhuri-Hocquenghem (15,5)
-  // idfk what that means so fingers crossed
   // see page 87 of ISO/IEC 18004:2015(E)
 
-  // TODO: Learn polynomial long division
   // pad formatinformation with 10 bits
   const unpaddedFormatInformation = [...formatInformation]
   formatInformation.push(...new Array<boolean>(10).fill(false))
@@ -101,7 +98,6 @@ export const GenFormatInformation = (
 }
 
 export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]): boolean[] => {
-  // the artical says that this is Reed-Solomon but the ISO standard says its BCH? Interesting...
   const formatInfo: boolean[] = []
   incomingFormatInfo.forEach((e) => formatInfo.push(e))
   if (formatInfo.length <= 10) {
@@ -118,7 +114,7 @@ export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]
     const currentGenerator: boolean[] = []
     BCHFormatInfoGeneratorPoly.forEach((e) => currentGenerator.push(e))
     if (currentGenerator.length < formatInfo.length)
-      RightPadArray(currentGenerator, formatInfo.length - currentGenerator.length) // potential point of error, I didnt write this method
+      RightPadArray(currentGenerator, formatInfo.length - currentGenerator.length)
 
     // xor the current bits with the padded generator polynomial
     for (let i = 0; i < formatInfo.length; i++)
@@ -130,6 +126,11 @@ export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]
       formatInfo.splice(0, firstTrue)
     return RecusrsiveGenFormatErrorCorrection(formatInfo) // lmfao i never called this before 💀💀💀💀💀
   }
+}
+
+export const ErrorCorrectionCoding = (codewords: boolean[][], errorCorrectionLevel: ErrorCorrectionLevel): boolean[] => {
+  const remainderPoly: boolean[] = []
+  return remainderPoly // TODO
 }
 
 export const GenV4Payload = (payload: string, errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.L) => {
@@ -160,7 +161,7 @@ export const GenV4Payload = (payload: string, errorCorrectionLevel: ErrorCorrect
   payloadBits.push(...GenTerminator(payloadBits.length))
 
   // step 4: add padding
-  payloadBits.push(...GenCodewordPadding(errorCorrectionLevel, payloadBits.length))
+  payloadBits.push(...Genv4CodewordPadding(errorCorrectionLevel, payloadBits.length))
 
   return payloadBits
 }
