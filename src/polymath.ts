@@ -1,3 +1,5 @@
+import { ErrorCorrectionInfo } from "./ecct"
+
 export const Mod285 = (exp: number): number => {
   // base case: the exponent is 8
   if (exp == 8)
@@ -79,9 +81,102 @@ export const GenGeneratorPoly = (degree: number): number[] => {
   }
 }
 
-export const GPToString = (terms: number[]): string => {
+// All this does is leaves alpha values in the array, and removes the x values
+export const CleanGeneratorPoly = (poly: number[]): number[] => {
+  const clean: number[] = []
+  for (let i = 0; i < poly.length; i += 2)
+    clean.push(poly[i])
+  return clean
+}
+
+export const AlphaPolyToString = (terms: number[]): string => {
   let str = ''
-  for (let i = 0; i < terms.length; i += 2)
-    str += `${terms[i] == 0 ? '' : terms[i] == 1 ? 'α' : `α^${terms[i]}`}${terms[i + 1] == 0 ? '' : terms[i + 1] == 1 ? 'x' : `x^${terms[i + 1]}`} + `
+  const len = terms.length - 1
+  for (let i = 0; i < terms.length; i++)
+    str += `α^${terms[i]}${`x^${len - i} + `}`
   return str.slice(0, -3)
+}
+
+export const BlockToPoly = (block: boolean[][]): number[] => {
+  const poly: number[] = []
+  // loop over all codewords in the block
+  for (let i = 0; i < block.length; i++) {
+    // convert boolean array to number
+    let val = 0
+    for (let j = 0; j < block[i].length; j++)
+      val += block[i][j] ? Math.pow(2, j) : 0
+    poly.push(val)
+  }
+  return poly
+}
+
+export const PolyToString = (poly: number[]): string => {
+  let str = ''
+  for (let i = 0; i < poly.length; i++)
+    str += `${poly[i] == 0 ? '' : `${poly[i]}x^${poly.length - i}`} + `
+  return str.slice(0, -3)
+}
+
+export const PolyToAlphaPoly = (poly: number[]): number[] => {
+  const alphaPoly: number[] = []
+  for (let i = 0; i < poly.length; i++)
+    alphaPoly.push(GF256IntToAlpha[poly[i]], poly.length - i - 1)
+  return alphaPoly
+}
+
+// Note: This is a per-block operation
+export const PolyLongDivision = (eccInfo: ErrorCorrectionInfo, dataPoly: number[], generatorPoly: number[]): number[] => {
+  // VERY IMPORTANT: the generator poly is ALPHA VALUES
+  // and the data poly are NOT ALPHA VALUES
+  const previousGenPoly: number[] = []
+  const numSteps = dataPoly.length
+  const genPolyBaseLen = generatorPoly.length
+
+  // multiply the message polynomial by x^numEccCodewords
+  // do this by adding numEccCodewords zeroes to the end of the message polynomial
+  for (let i = 0; i < eccInfo.numErrorCorrectionCodewords; i++)
+    dataPoly.push(0)
+  const sizeDiff = dataPoly.length - generatorPoly.length
+  for (let i = 0; i < sizeDiff; i++)
+    generatorPoly.push(0)
+
+  // initialize the previous generator polynomial
+  for (let i = 0; i < dataPoly.length; i++)
+    previousGenPoly.push(0)
+
+  // multiply the generator poly by the leading coefficient of the data poly
+  // get the first coefficient alpha value
+  const alpha0 = GF256IntToAlpha[dataPoly[0]]
+  // multiply the first term by adding the alpha exponent to the generator poly
+  // mod 255
+  // alsp convert the alpha poly to a normal poly
+  for (let j = 0; j < genPolyBaseLen; j++)
+    previousGenPoly[j] = GF256AlphaToInt[(generatorPoly[j] + alpha0) % 255] // not alpha
+  // discard generator polynomial leading zero
+  // xor with the message polynomial
+  for (let j = 0; j < numSteps; j++) // numsteps is also the base len of the data poly
+    previousGenPoly[j] ^= dataPoly[j]
+  previousGenPoly.splice(0, 1)
+
+  // loop over all the steps, minus the first
+  for (let i = 1; i < numSteps - 1; i++) {
+    // copy the previous generator polynomial to the next one
+    const nextGenPoly: number[] = []
+    for (let i = 0; i < previousGenPoly.length; i++)
+      nextGenPoly.push(previousGenPoly[i])
+
+    // get the lead term of the previous generator polynomial xor
+    const alpha = GF256IntToAlpha[previousGenPoly[0]]
+    for (let j = 0; j < genPolyBaseLen; j++)
+      nextGenPoly[j] = GF256AlphaToInt[(generatorPoly[j] + alpha) % 255] // not alpha
+    // discard generator polynomial leading zero
+    // xor with the previous generator polynomial
+    for (let j = 0; j < numSteps; j++) // numsteps is also the base len of the data poly
+      nextGenPoly[j] ^= previousGenPoly[j]
+    nextGenPoly.splice(0, 1)
+    // copy the next generator polynomial to the previous one
+    previousGenPoly.forEach((e, i) => previousGenPoly[i] = nextGenPoly[i])
+  }
+
+  return previousGenPoly // TODO
 }
