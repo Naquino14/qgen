@@ -18,7 +18,7 @@ for (let i = 0; i < 256; i++)
   GF256AlphaToInt[i] = Mod285(i)
 
 export const GF256IntToAlpha: number[] = []
-GF256IntToAlpha[0] = -1
+GF256IntToAlpha[0] = 0 // bruh dont make this -1
 for (let i = 1; i < 256; i++)
   GF256IntToAlpha[i] = GF256AlphaToInt.indexOf(i)
 
@@ -125,58 +125,52 @@ export const PolyToAlphaPoly = (poly: number[]): number[] => {
 }
 
 // Note: This is a per-block operation
+/**
+ * Polynomial long division
+ * @param eccInfo the error correction info object
+ * @param dataPoly the data polynomial (as digits)
+ * @param generatorPoly the generator polynomial (as alpha values)
+ * @returns the remainder of the division (as digits)
+ */
 export const PolyLongDivision = (eccInfo: ErrorCorrectionInfo, dataPoly: number[], generatorPoly: number[]): number[] => {
-  // VERY IMPORTANT: the generator poly is ALPHA VALUES
-  // and the data poly are NOT ALPHA VALUES
-  const previousGenPoly: number[] = []
-  const numSteps = dataPoly.length
-  const genPolyBaseLen = generatorPoly.length
+  // its good to note here that dataPoly comes as digits and generatorPoly comes as alpha values
 
-  // multiply the message polynomial by x^numEccCodewords
-  // do this by adding numEccCodewords zeroes to the end of the message polynomial
+  // store original sizes of data poly and generator poly
+  const data0len = dataPoly.length
+  const gen0len = generatorPoly.length
+
+  // prev will store the remainder for every round
+  const prev: number[] = []
+
+  // prepare the data and generator polynomials by adding zeroes to chnage their degree
+  // multiply by 10^ecc where ecc is the number of error correction codewords
   for (let i = 0; i < eccInfo.numErrorCorrectionCodewords; i++)
-    dataPoly.push(0)
-  const sizeDiff = dataPoly.length - generatorPoly.length
-  for (let i = 0; i < sizeDiff; i++)
-    generatorPoly.push(0)
+    dataPoly.push(0);
 
-  // initialize the previous generator polynomial
-  for (let i = 0; i < dataPoly.length; i++)
-    previousGenPoly.push(0)
+  // for the generator poly, add len(dataPoly) - gen0len zeroes
+  for (let i = 0; i < dataPoly.length - gen0len; i++)
+    generatorPoly.push(0);
 
-  // multiply the generator poly by the leading coefficient of the data poly
-  // get the first coefficient alpha value
-  const alpha0 = GF256IntToAlpha[dataPoly[0]]
-  // multiply the first term by adding the alpha exponent to the generator poly
-  // mod 255
-  // alsp convert the alpha poly to a normal poly
-  for (let j = 0; j < genPolyBaseLen; j++)
-    previousGenPoly[j] = GF256AlphaToInt[(generatorPoly[j] + alpha0) % 255] // not alpha
-  // discard generator polynomial leading zero
-  // xor with the message polynomial
-  for (let j = 0; j < numSteps; j++) // numsteps is also the base len of the data poly
-    previousGenPoly[j] ^= dataPoly[j]
-  previousGenPoly.splice(0, 1)
+  // copy data poly to prev
+  dataPoly.forEach(e => prev.push(e))
 
-  // loop over all the steps, minus the first
-  for (let i = 1; i < numSteps - 1; i++) {
-    // copy the previous generator polynomial to the next one
-    const nextGenPoly: number[] = []
-    for (let i = 0; i < previousGenPoly.length; i++)
-      nextGenPoly.push(previousGenPoly[i])
+  // loop over all the steps (the number of steps is #ecc)
+  for (let i = 0; i < data0len; i++) {
+    // if the first term of prev is 0, drop it
+    if (prev[0] == 0) {
+      prev.splice(0, 1)
+      continue
+    }
+    // multiply the generator poly by the first term of the prev poly (by adding the alpha values)
+    const alpha = GF256IntToAlpha[prev[0]]
 
-    // get the lead term of the previous generator polynomial xor
-    const alpha = GF256IntToAlpha[previousGenPoly[0]]
-    for (let j = 0; j < genPolyBaseLen; j++)
-      nextGenPoly[j] = GF256AlphaToInt[(generatorPoly[j] + alpha) % 255] // not alpha
-    // discard generator polynomial leading zero
-    // xor with the previous generator polynomial
-    for (let j = 0; j < numSteps; j++) // numsteps is also the base len of the data poly
-      nextGenPoly[j] ^= previousGenPoly[j]
-    nextGenPoly.splice(0, 1)
-    // copy the next generator polynomial to the previous one
-    previousGenPoly.forEach((e, i) => previousGenPoly[i] = nextGenPoly[i])
+    // add alpha to every term in the generator poly, mod it by 255, 
+    // transform it into a digit from its alpha value, xor it with the prev poly, and store it in prev 
+    for (let j = 0; j < gen0len; j++)
+      prev[j] ^= GF256AlphaToInt[(generatorPoly[j] + alpha) % 255]
+
+    // drop the first term of prev
+    prev.splice(0, 1)
   }
-
-  return previousGenPoly // TODO
+  return prev
 }
