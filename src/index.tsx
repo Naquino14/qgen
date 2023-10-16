@@ -1,6 +1,6 @@
 import React from 'react'
 import { FinderPattern, AlignmentPattern } from './patterns'
-import { PreStampV4 } from './stamper'
+import { Stampv4 } from './stamper'
 import { PayloadToCodewords, ErrorCorrectionLevel, GenV4ByteModeHeader, GenV4Payload, MaskPattern } from './encoding'
 
 const v10wh = 66
@@ -44,7 +44,7 @@ export const QrRenderer: React.FC<Props> = ({
 
   // let bitstream = GenV10ECIheader(payload)
 
-  const qr = PreStampV4()
+  const qr = Stampv4(payload, ErrorCorrectionLevel.M)
 
   return (
     // todo: this is goofy ahh with bug and small dimensions, pls fix

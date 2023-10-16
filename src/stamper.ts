@@ -55,9 +55,11 @@ export const StampFormatInfo = (base: boolean[][], formatInfo: boolean[]) => {
   StampXOR(base, finalStamp)
 }
 
-export const PreStampV4 = (errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.L) => {
+export const Stampv4 = (payload: string, errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.L) => {
+
   let qr: boolean[][] = []
 
+  // TODO: make this work for all versions
   for (let i = 0; i < 33; i++) {
     qr[i] = new Array(33).fill(false)
   }

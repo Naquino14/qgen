@@ -1,3 +1,4 @@
+import { ErrorCorrectionInfo, ErrorCorrectionTable, GetCapacity, GetECCInfo } from './ecct'
 import {
   ByteModulo,
   AlphanumericTable,
@@ -35,6 +36,233 @@ export enum MaskPattern {
   M101,
   M110,
   M111,
+}
+
+export enum Mode {
+  Byte,
+  Numeric,
+  Alphanumeric,
+  Kanji, // not supported
+  ECI // not supported
+}
+
+export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.L): boolean[][] | null => {
+  const code: boolean[][] = []
+
+  // step 1: analyze data
+  const mode: Mode = (() => {
+    // check if numeric
+    if (/\d+/.test(payload))
+      return Mode.Numeric
+    // check if alphanumeric
+    if (/([A-Z]|[a-z]|[\s$%*+\-./:])+/.test(payload))
+      return Mode.Alphanumeric
+    // check if byte
+    return Mode.Byte
+  })()
+
+  // step 2: encode data into bits
+  const payloadBits: boolean[] = []
+
+  // 2.1: determine version, and get ecc info
+  // if the payload is too large return undefined
+  if (GetCapacity(40, errorCorrectionLevel, mode) < payload.length)
+    return null
+  const version = ((): number => {
+    // find the smallest version that can fit the payload
+    let version = 1
+    for (let i = 0; i < 40; i++) {
+      const capacity = GetCapacity(i, errorCorrectionLevel, mode)
+      if (capacity >= payload.length) {
+        version = i + 1
+        break
+      }
+    }
+    return version
+  })()
+
+  const eccInfo = GetECCInfo(version, errorCorrectionLevel)
+
+  // step 2.2: header, contains mode indicator and character count indicator
+  const header = GenHeader(payload.length, mode, version)
+  payloadBits.push(...header)
+
+  // 2.3: encode payload
+  const encodedBits = Encode(payload, mode, errorCorrectionLevel)
+  payloadBits.push(...encodedBits)
+
+  // step 3 padding
+  // 3.1 add a terminator
+  const diff = eccInfo.totalDataCodewords * 8 - payloadBits.length
+  if (diff > 4)
+    payloadBits.push(...new Array<boolean>(4).fill(false))
+  else
+    payloadBits.push(...new Array<boolean>(diff).fill(false))
+
+  // 3.2 make sure payload is a multiple of 8
+  payloadBits.push(...new Array<boolean>(8 - (payloadBits.length % 8)).fill(false))
+
+  // 3.3 add padding if necessary
+  const padding = GenPadding(payloadBits.length, eccInfo)
+  payloadBits.push(...padding)
+
+  // step 4: split payload into codewords
+  const codewords = PayloadToCodewords(payloadBits)
+
+  // step 5: error correction coding
+  // 5.1 split codewords into blocks
+  const blocks = GroupCodewords(codewords, eccInfo)
+
+
+  return code // placeholder
+}
+
+export const GenPadding = (payloadSize: number, eccInfo: ErrorCorrectionInfo): boolean[] => {
+  const padding: boolean[] = []
+
+  const codewordPayloadSize = payloadSize / 8
+  const diff = eccInfo.totalDataCodewords - codewordPayloadSize
+  // alternate between 11101100 and 00010001
+  for (let i = 0; i < diff; i++)
+    padding.push(...(i % 2 === 0 ? CodewordPadding0 : CodewordPadding1))
+
+  return padding
+}
+
+export const GenHeader = (payloadLen: number, mode: Mode, version: number): boolean[] => {
+  const header: boolean[] = []
+  // add mode indicator
+  header.push(
+    ...((): boolean[] => {
+      switch (mode) {
+        case Mode.Numeric:
+          return [false, false, true, false] // 0001
+        case Mode.Alphanumeric:
+          return [false, true, false, false] // 0010
+        case Mode.Byte:
+          return [false, true, false, false] // 0100
+        case Mode.Kanji:
+          return [false, true, false, false] // 1000
+        case Mode.ECI:
+          return [false, true, false, false] // 0111
+      }
+    })()
+  )
+
+  // add character count indicator
+  const cciLength = ((): number => {
+    if (version <= 9)
+      switch (mode) {
+        case Mode.Numeric:
+          return 10
+        case Mode.Alphanumeric:
+          return 9
+        case Mode.Byte:
+          return 8
+      }
+    else if (version <= 26)
+      switch (mode) {
+        case Mode.Numeric:
+          return 12
+        case Mode.Alphanumeric:
+          return 11
+        case Mode.Byte:
+          return 16
+      }
+    else
+      switch (mode) {
+        case Mode.Numeric:
+          return 14
+        case Mode.Alphanumeric:
+          return 13
+        case Mode.Byte:
+          return 16
+      }
+    throw new Error('Invalid version')
+  })()
+
+  header.push(...ConvertToBits(payloadLen, cciLength))
+
+  return header
+}
+
+export const Encode = (payload: string, mode: Mode, ecl: ErrorCorrectionLevel): boolean[] => {
+  switch (mode) {
+    case Mode.Numeric:
+      return EncodeNumeric(payload)
+    case Mode.Alphanumeric:
+      return EncodeAlphanumeric(payload)
+    case Mode.Byte:
+      return EncodeByte(payload)
+    case Mode.Kanji:
+      throw new Error('Kanji is not supported')
+    case Mode.ECI:
+      throw new Error('ECI is not supported')
+  }
+}
+
+export const EncodeNumeric = (payload: string): boolean[] => {
+  // step 1: split payload into groups of 3
+  const groups: string[] = []
+  for (let i = 0; i < payload.length; i += 3)
+    groups.push(payload.slice(i, i + 3))
+
+  // step 2: encode each group into binary.
+  // 3 digits: 10 bits
+  // 2 digits: 7 bits
+  // 1 digit: 4 bits
+  // note  zeroes dont count
+
+  const bits: boolean[] = []
+  groups.forEach(g => {
+    switch (g.length) {
+      case 3:
+        bits.push(...ConvertToBits(parseInt(g), 10))
+        break
+      case 2:
+        bits.push(...ConvertToBits(parseInt(g), 7))
+        break
+      case 1:
+        bits.push(...ConvertToBits(parseInt(g), 4))
+        break
+    }
+  })
+
+  return bits
+}
+
+export const EncodeAlphanumeric = (payload: string): boolean[] => {
+  const bits: boolean[] = []
+
+  // step 1: split payload characters into groups of 2
+  const groups: string[] = []
+  for (let i = 0; i < payload.length; i += 2)
+    groups.push(payload.charAt(i) + (payload.charAt(i + 1) ?? ''))
+
+  // step 2: encode each group into binary
+  // 2.1: convert each substring character into digits
+  const digits: number[] = []
+  groups.forEach(g => {
+    // 2.2 multiply the first digit by 45 and add the second digit
+    const digit1 = AlphanumericTableMap.get(g[0])! * 45
+    const digit2 = g.length === 2 ? AlphanumericTableMap.get(g[1])! : 0
+    digits.push(digit1 + digit2)
+  })
+
+  // step 3, turn each digit into 11 bits. pad left with 0s
+  digits.forEach(d => bits.push(...ConvertToBits(d, 11)))
+
+  return bits
+}
+
+export const EncodeByte = (payload: string): boolean[] => {
+  const bits: boolean[] = []
+
+  // convert each number to its byte value, then push its bits
+  for (let i = 0; i < payload.length; i++)
+    bits.push(...ConvertToBits(payload.charCodeAt(i), 8))
+
+  return bits
 }
 
 export const GenV4ByteModeHeader = (payload: string) => {
@@ -128,13 +356,9 @@ export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]
   }
 }
 
-export const ErrorCorrectionCoding = (codewords: boolean[][], errorCorrectionLevel: ErrorCorrectionLevel): boolean[] => {
-  const remainderPoly: boolean[] = []
-  return remainderPoly // TODO
-}
 
 export const GenV4Payload = (payload: string, errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.L) => {
-  // this method works explicitely for byte mode
+  // this method works explicitely for byte mode v4
   payload = payload.toUpperCase()
   const payloadLength = payload.length
   const payloadBits: boolean[] = []
@@ -222,6 +446,11 @@ export const QRv4CodewordsToPreECCBlocks = (codewords: boolean[][], errorCorrect
     }
   }
   return eccBlocks
+}
+
+/// result is ecc[group][block][codeword][byte]
+export const GroupCodewords = (codewords: boolean[][], eccInfo: ErrorCorrectionInfo): boolean[][][][] => {
+  return [] // todo
 }
 
 const BytewiseModulus = (codeword: boolean[]) => {
