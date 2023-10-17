@@ -231,6 +231,7 @@ export const EncodeNumeric = (payload: string): boolean[] => {
 }
 
 export const EncodeAlphanumeric = (payload: string): boolean[] => {
+  // TODO: something went wrong here
   const bits: boolean[] = []
 
   // step 1: split payload characters into groups of 2
@@ -242,14 +243,18 @@ export const EncodeAlphanumeric = (payload: string): boolean[] => {
   // 2.1: convert each substring character into digits
   const digits: number[] = []
   groups.forEach(g => {
-    // 2.2 multiply the first digit by 45 and add the second digit
-    const digit1 = AlphanumericTableMap.get(g[0])! * 45
+    // 2.2 multiply the first digit by 45 (if two digits exist) and add the second digit
+    const digit1 = AlphanumericTableMap.get(g[0])! * (g.length === 2 ? 45 : 1)
     const digit2 = g.length === 2 ? AlphanumericTableMap.get(g[1])! : 0
     digits.push(digit1 + digit2)
   })
 
   // step 3, turn each digit into 11 bits. pad left with 0s
-  digits.forEach(d => bits.push(...ConvertToBitsNew(d, 11)))
+  // if there are an odd number of characters in the payload, 
+  // the last character is encoded as 6 bits
+  const odd = payload.length % 2 === 1
+  for (let i = 0; i < digits.length; i++)
+    bits.push(...ConvertToBitsNew(digits[i], odd && i === digits.length - 1 ? 6 : 11))
 
   return bits
 }
