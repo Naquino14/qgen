@@ -22,7 +22,7 @@ export const GetECCInfo = (version: number, errorCorrectionLevel: ErrorCorrectio
 }
 
 export const GetCapacity = (version: number, errorCorrectionLevel: ErrorCorrectionLevel, mode: Mode): number =>
-    CharacterCapacitiesTable[version][errorCorrectionLevel][mode]
+    CharacterCapacitiesTable[version - 1][errorCorrectionLevel][mode]
 
 export const ErrorCorrectionTable: number[][] = [ // ai generated!
     [19, 7, 1, 19, 0, 0],

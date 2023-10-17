@@ -1,7 +1,6 @@
 import { ErrorCorrectionInfo, ErrorCorrectionTable, GetCapacity, GetECCInfo } from './ecct'
 import {
   ByteModulo,
-  AlphanumericTable,
   ErrorCorrectionBits,
   MaskBits,
   CodewordPadding0,
@@ -39,9 +38,9 @@ export enum MaskPattern {
 }
 
 export enum Mode {
-  Byte,
   Numeric,
   Alphanumeric,
+  Byte,
   Kanji, // not supported
   ECI // not supported
 }
@@ -71,10 +70,10 @@ export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorre
   const version = ((): number => {
     // find the smallest version that can fit the payload
     let version = 1
-    for (let i = 0; i < 40; i++) {
+    for (let i = 1; i <= 40; i++) {
       const capacity = GetCapacity(i, errorCorrectionLevel, mode)
       if (capacity >= payload.length) {
-        version = i + 1
+        version = i
         break
       }
     }
@@ -136,15 +135,15 @@ export const GenHeader = (payloadLen: number, mode: Mode, version: number): bool
     ...((): boolean[] => {
       switch (mode) {
         case Mode.Numeric:
-          return [false, false, true, false] // 0001
+          return [false, false, false, true] // 0001
         case Mode.Alphanumeric:
-          return [false, true, false, false] // 0010
+          return [false, false, true, false] // 0010
         case Mode.Byte:
           return [false, true, false, false] // 0100
         case Mode.Kanji:
-          return [false, true, false, false] // 1000
+          return [true, false, false, false] // 1000
         case Mode.ECI:
-          return [false, true, false, false] // 0111
+          return [false, true, true, true] // 0111
       }
     })()
   )
@@ -181,7 +180,7 @@ export const GenHeader = (payloadLen: number, mode: Mode, version: number): bool
     throw new Error('Invalid version')
   })()
 
-  header.push(...ConvertToBits(payloadLen, cciLength))
+  header.push(...ConvertToBitsNew(payloadLen, cciLength))
 
   return header
 }
@@ -217,13 +216,13 @@ export const EncodeNumeric = (payload: string): boolean[] => {
   groups.forEach(g => {
     switch (g.length) {
       case 3:
-        bits.push(...ConvertToBits(parseInt(g), 10))
+        bits.push(...ConvertToBitsNew(parseInt(g), 10))
         break
       case 2:
-        bits.push(...ConvertToBits(parseInt(g), 7))
+        bits.push(...ConvertToBitsNew(parseInt(g), 7))
         break
       case 1:
-        bits.push(...ConvertToBits(parseInt(g), 4))
+        bits.push(...ConvertToBitsNew(parseInt(g), 4))
         break
     }
   })
@@ -250,7 +249,7 @@ export const EncodeAlphanumeric = (payload: string): boolean[] => {
   })
 
   // step 3, turn each digit into 11 bits. pad left with 0s
-  digits.forEach(d => bits.push(...ConvertToBits(d, 11)))
+  digits.forEach(d => bits.push(...ConvertToBitsNew(d, 11)))
 
   return bits
 }
@@ -260,7 +259,7 @@ export const EncodeByte = (payload: string): boolean[] => {
 
   // convert each number to its byte value, then push its bits
   for (let i = 0; i < payload.length; i++)
-    bits.push(...ConvertToBits(payload.charCodeAt(i), 8))
+    bits.push(...ConvertToBitsNew(payload.charCodeAt(i), 8))
 
   return bits
 }
@@ -448,9 +447,41 @@ export const QRv4CodewordsToPreECCBlocks = (codewords: boolean[][], errorCorrect
   return eccBlocks
 }
 
-/// result is ecc[group][block][codeword][byte]
+/**
+ * Group codewords ecc[group][block][codeword][byte]
+ * @param codewords the codewords to group
+ * @param eccInfo the error correction info
+ * @returns the grouped codewords
+ */
 export const GroupCodewords = (codewords: boolean[][], eccInfo: ErrorCorrectionInfo): boolean[][][][] => {
-  return [] // todo
+  /// result is ecc[group][block][codeword][byte]
+  const groupedData: boolean[][][][] = []
+  // if group 2's codewords per block is nonzero we have a second group
+  const numGroups = eccInfo.group2DataCodewordsPerBlock === 0 ? 1 : 2
+  // this swaps into group 2 num blocks once group 1 is done grouping
+  let groupsPerBlock = eccInfo.group1NumBlocks
+  // this swaps into group 2 data codewords per block once group 1 is done grouping
+  let codewordsPerBlock = eccInfo.group1DataCodewordsPerBlock
+
+  // loop over groups
+  for (let g = 0; g < numGroups; g++) {
+    // loop over blocks
+    for (let b = 0; b < groupsPerBlock; b++) {
+      // loop over codewords
+      for (let c = 0; c < codewordsPerBlock; c++) {
+        // loop over bytes
+        groupedData[g] ??= []
+        groupedData[g][b] ??= []
+        groupedData[g][b][c] ??= []
+        for (let i = 0; i < 8; i++)
+          groupedData[g][b][c].push(codewords[c + (b * codewordsPerBlock)][i])
+      }
+    }
+    // switch to group 2
+    groupsPerBlock = eccInfo.group2NumBlocks
+    codewordsPerBlock = eccInfo.group2DataCodewordsPerBlock
+  }
+  return groupedData // TODO: testme
 }
 
 const BytewiseModulus = (codeword: boolean[]) => {
@@ -499,6 +530,16 @@ const ConvertToBits = (value: number, length: number) => {
   const bits: boolean[] = []
   for (let i = 0; i < length; i++)
     bits.push((value >> i) % 2 === 1)
+  return bits
+}
+
+// this takes a value number and converts it to a boolean array of length length
+// the array is padded with 0s to the left
+const ConvertToBitsNew = (value: number, length: number) => {
+  const bits: boolean[] = []
+  for (let i = 0; i < length; i++)
+    bits.push((value >> i) % 2 === 1)
+  bits.reverse()
   return bits
 }
 
