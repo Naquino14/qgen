@@ -110,10 +110,20 @@ export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorre
 
   // step 5: error correction coding
   // 5.1 split codewords into blocks
-  const blocks = GroupCodewords(codewords, eccInfo)
+  const groups = GroupCodewords(codewords, eccInfo)
+  // blocks are groups[g][b]
 
+  // 5.2 generate error correction codewords for each block
+  // eccBlocks[group][block][codeword]
+  const eccBlocks: boolean[][][] = GenErrorCorrectionCodes(groups, eccInfo)
 
   return code // placeholder
+}
+
+export const GenErrorCorrectionCodes = (groups: boolean[][][][], eccInfo: ErrorCorrectionInfo): boolean[][][] => {
+  const ecc: boolean[][][] = []
+
+  return ecc
 }
 
 export const GenPadding = (payloadSize: number, eccInfo: ErrorCorrectionInfo): boolean[] => {
