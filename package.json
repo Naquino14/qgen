@@ -34,8 +34,8 @@
   },
   "homepage": "https://github.com/naquino14/qgen#readme",
   "devDependencies": {
-    "@types/react": "^18.2.21",
-    "prettier": "^3.0.2",
+    "@types/react": "^18.2.29",
+    "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
     "tslint": "^6.1.3",
     "tslint-config-prettier": "^1.18.0",
