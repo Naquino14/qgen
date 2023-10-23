@@ -10,6 +10,7 @@ import {
   AlphanumericTableMap,
   ByteTableMap,
 } from './patterns'
+import { CleanGeneratorPoly, GenGeneratorPoly, PolyLongDivision } from './polymath'
 
 export enum ErrorCorrectionLevel {
   L,
@@ -111,7 +112,7 @@ export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorre
   // step 5: error correction coding
   // 5.1 split codewords into blocks
   const groups = GroupCodewords(codewords, eccInfo)
-  // blocks are groups[g][b]
+  // blocks are groups[g][b][c][i]
 
   // 5.2 generate error correction codewords for each block
   // eccBlocks[group][block][codeword]
@@ -120,8 +121,49 @@ export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorre
   return code // placeholder
 }
 
+/// result is ecc[group][block][bit], because theres 1 codeword per block
 export const GenErrorCorrectionCodes = (groups: boolean[][][][], eccInfo: ErrorCorrectionInfo): boolean[][][] => {
   const ecc: boolean[][][] = []
+  // get number of ecc per block
+  const numEccPb = eccInfo.numErrorCorrectionCodewords
+  // get number of groups 
+  const numGroups = eccInfo.group2DataCodewordsPerBlock === 0 ? 1 : 2
+  // get number of blocks per group
+  let codewordsPerBlock = eccInfo.group1DataCodewordsPerBlock
+  // this swaps into group 2 num blocks once group 1 is done grouping
+  let groupsPerBlock = eccInfo.group1NumBlocks
+  // generate generator polynomial
+  const eccGenPoly = CleanGeneratorPoly(GenGeneratorPoly(numEccPb))
+
+  // loop over all the groups
+  for (let g = 0; g < numGroups; g++) {
+    // loop over blocks
+    for (let b = 0; b < groupsPerBlock; b++) {
+
+      const dataPoly: number[] = []
+      // loop over codewords, and push each one's integer representation into an array
+      for (let c = 0; c < codewordsPerBlock; c++) {
+        const codeword = groups[g][b][c]
+        const num = convertToDigit(codeword)
+        dataPoly.push(num)
+      }
+      // make a copy of the generator polynomial and store it in context
+      // we make a copy because the generator polynomial is modified during the division
+      const ctxGenPoly: number[] = []
+      eccGenPoly.forEach(e => ctxGenPoly.push(e))
+
+      // divide the message polynomial by the generator polynomial
+      const remainder = PolyLongDivision(eccInfo, dataPoly, ctxGenPoly)
+
+      // store the remainder in ecc
+      ecc[g] ??= []
+      ecc[g][b] = remainder.map(e => ConvertToBitsNew(e, 8)).flat()
+      // Note: this might be wrong ^^^
+    }
+    // switch to group 2
+    groupsPerBlock = eccInfo.group2NumBlocks
+    codewordsPerBlock = eccInfo.group2DataCodewordsPerBlock
+  }
 
   return ecc
 }
@@ -370,7 +412,6 @@ export const RecusrsiveGenFormatErrorCorrection = (incomingFormatInfo: boolean[]
   }
 }
 
-
 export const GenV4Payload = (payload: string, errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.L) => {
   // this method works explicitely for byte mode v4
   payload = payload.toUpperCase()
@@ -556,6 +597,14 @@ const ConvertToBitsNew = (value: number, length: number) => {
     bits.push((value >> i) % 2 === 1)
   bits.reverse()
   return bits
+}
+
+const convertToDigit = (bits: boolean[]) => {
+  bits.reverse()
+  let digit = 0
+  for (let i = 0; i < bits.length; i++)
+    digit += bits[i] ? Math.pow(2, i) : 0
+  return digit
 }
 
 const LeftPadArray = (array: boolean[], endSize: number) => {
