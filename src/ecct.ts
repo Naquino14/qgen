@@ -24,6 +24,8 @@ export const GetECCInfo = (version: number, errorCorrectionLevel: ErrorCorrectio
 export const GetCapacity = (version: number, errorCorrectionLevel: ErrorCorrectionLevel, mode: Mode): number =>
     CharacterCapacitiesTable[version - 1][errorCorrectionLevel][mode]
 
+export const GetRemainderBits = (version: number): number => RemainderBitsTable[version - 1]
+
 export const ErrorCorrectionTable: number[][] = [ // ai generated!
     [19, 7, 1, 19, 0, 0],
     [16, 10, 1, 16, 0, 0],
@@ -229,4 +231,12 @@ export const CharacterCapacitiesTable: number[][][] = [ // ai generated! starts 
     [[6479, 3927, 2699], [5039, 3054, 2099], [3599, 2181, 1499], [2735, 1658, 1139]],
     [[6743, 4087, 2809], [5313, 3220, 2213], [3791, 2298, 1579], [2927, 1774, 1219]],
     [[7089, 4296, 2953], [5596, 3391, 2331], [3993, 2420, 1663], [3057, 1852, 1273]]
+]
+
+export const RemainderBitsTable: number[] = [
+    0, 7, 7, 7, 7, 7, 0, 0,
+    0, 0, 0, 0, 0, 3, 3, 3,
+    3, 3, 3, 3, 4, 4, 4, 4,
+    4, 4, 4, 3, 3, 3, 3, 3,
+    3, 3, 0, 0, 0, 0, 0, 0
 ]
