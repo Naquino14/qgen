@@ -88,7 +88,7 @@ export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorre
   payloadBits.push(...header)
 
   // 2.3: encode payload
-  const encodedBits = Encode(payload, mode, errorCorrectionLevel)
+  const encodedBits = Encode(payload, mode)
   payloadBits.push(...encodedBits)
 
   // step 3 padding
@@ -237,7 +237,7 @@ export const GenHeader = (payloadLen: number, mode: Mode, version: number): bool
   return header
 }
 
-export const Encode = (payload: string, mode: Mode, ecl: ErrorCorrectionLevel): boolean[] => {
+export const Encode = (payload: string, mode: Mode): boolean[] => {
   switch (mode) {
     case Mode.Numeric:
       return EncodeNumeric(payload)
@@ -589,8 +589,13 @@ const ConvertToBits = (value: number, length: number) => {
   return bits
 }
 
-// this takes a value number and converts it to a boolean array of length length
 // the array is padded with 0s to the left
+/**
+ * this takes a value number and converts it to a big endian boolean array of length `length`
+ * @param value the value to convert
+ * @param length the length of the resulting array
+ * @returns the boolean array
+ */
 const ConvertToBitsNew = (value: number, length: number) => {
   const bits: boolean[] = []
   for (let i = 0; i < length; i++)
@@ -599,6 +604,11 @@ const ConvertToBitsNew = (value: number, length: number) => {
   return bits
 }
 
+/**
+ * Converts a big endian boolean array to a number
+ * @param bits the bits to convert
+ * @returns the number
+ */
 const convertToDigit = (bits: boolean[]) => {
   bits.reverse()
   let digit = 0
