@@ -1,4 +1,5 @@
-import { ErrorCorrectionInfo, ErrorCorrectionTable, GetCapacity, GetECCInfo } from './ecct'
+import { version } from 'react'
+import { ErrorCorrectionInfo, ErrorCorrectionTable, GetCapacity, GetECCInfo, GetRemainderBits } from './ecct'
 import {
   ByteModulo,
   ErrorCorrectionBits,
@@ -118,7 +119,32 @@ export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorre
   // eccBlocks[group][block][codeword]
   const eccBlocks: boolean[][][] = GenErrorCorrectionCodes(groups, eccInfo)
 
+  // step 6: Structuring message
+  // 6.1 interleave data and ecc codewords
+  const interleavedCodewords = InterleaveCodewords(groups, eccBlocks, eccInfo)
+
+  // step 6.1 add remainder bits
+  const remainderBits = GenRemainderBits(version)
+  interleavedCodewords.push(...remainderBits)
+
+  payloadBits.splice(0, payloadBits.length)
+  payloadBits.push(...interleavedCodewords)
+
   return code // placeholder
+}
+
+export const GenRemainderBits = (version: number): boolean[] => {
+  const bits: boolean[] = []
+  const numBits = GetRemainderBits(version)
+  for (let i = 0; i < numBits; i++)
+    bits.push(false)
+  return bits
+}
+
+export const InterleaveCodewords = (groups: boolean[][][][], eccBlocks: boolean[][][], eccInfo: ErrorCorrectionInfo): boolean[] => {
+  const icw: boolean[] = []
+
+  return icw // NYI
 }
 
 /// result is ecc[group][block][bit], because theres 1 codeword per block
