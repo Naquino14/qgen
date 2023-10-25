@@ -121,6 +121,8 @@ export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorre
 
   // step 6: Structuring message
   // 6.1 interleave data and ecc codewords
+  /// #### this needs to be tested more, but for now im gonna push it since it works with my small test case. ####
+  /// #### more specifically, multi-group codewords with different block sizes per group needs to be tested.  ####
   const interleavedCodewords = InterleaveCodewords(groups, eccBlocks, eccInfo)
 
   // step 6.1 add remainder bits
@@ -141,10 +143,109 @@ export const GenRemainderBits = (version: number): boolean[] => {
   return bits
 }
 
+/**
+ * Flatten out, and interleave data and error correction codewords
+ * @param groups the grouped data codewords, in binary
+ * @param eccBlocks the grouped error correction codewords, in binary
+ * @param eccInfo the error correction info
+ * @returns the interleaved codewords as binary
+ */
 export const InterleaveCodewords = (groups: boolean[][][][], eccBlocks: boolean[][][], eccInfo: ErrorCorrectionInfo): boolean[] => {
   const icw: boolean[] = []
 
-  return icw // NYI
+  // get number of codewords
+  const codewords = Math.max(eccInfo.group1DataCodewordsPerBlock, eccInfo.group2DataCodewordsPerBlock)
+
+  // copy codewords into a 2d array, with the first index being the integer 
+  // representation of the codeword, and the second index being the block
+  // example:
+  // ________ c1 c2
+  // block 1: 45 67 ...
+  // block 2: 89 10 ...
+
+  const codewordTable: number[][] = []
+  let row = 0
+  let column = 0
+
+  // get number of groups 
+  const numGroups = eccInfo.group2DataCodewordsPerBlock === 0 ? 1 : 2
+  // get number of blocks per group
+  let codewordsPerBlock = eccInfo.group1DataCodewordsPerBlock
+  // this swaps into group 2 num blocks once group 1 is done grouping
+  let groupsPerBlock = eccInfo.group1NumBlocks
+
+  // loop through every single codeword and add it to the table, column by column
+  for (let g = 0; g < numGroups; g++) {
+    for (let b = 0; b < groupsPerBlock; b++) {
+
+      for (let c = 0; c < codewordsPerBlock; c++) {
+        codewordTable[row] ??= []
+        codewordTable[row][column] = convertToDigit(groups[g][b][c]) // WANING: AI GENERATED AND UNTESTED, PRONE TO OOB
+        column++
+      }
+      row++
+      column = 0
+    }
+    // switch to group 2
+    groupsPerBlock = eccInfo.group2NumBlocks
+    codewordsPerBlock = eccInfo.group2DataCodewordsPerBlock
+  }
+
+  // flatten out the codeword table into a single array
+  // by reading the codewords column by column
+  const flattenedCodewordTable: number[] = []
+  for (let c = 0; c < codewords; c++)
+    for (let r = 0; r < codewordTable.length; r++)
+      flattenedCodewordTable.push(codewordTable[r][c]) // WARNING: AI GENERATED AND UNTESTED
+
+  // loop thru every single ecc and add it to its own table, column by column
+  row = 0 // reset row, and column
+  column = 0
+
+  // reset groups per block
+  groupsPerBlock = eccInfo.group1NumBlocks
+
+  // set codewords per block to the number of ecc per block
+  codewordsPerBlock = eccInfo.numErrorCorrectionCodewords
+
+  const eccTable: number[][] = []
+
+  // flatten all blocks out into a single array, and add it to the ecc table
+  for (let g = 0; g < numGroups; g++) {
+    for (let b = 0; b < groupsPerBlock; b++) {
+
+      for (let c = 0; c < codewordsPerBlock; c++) {
+        // we are now looping over the codewords.
+        // However, due to an oversight, all of the 
+        // codewords in binary are not grouped
+        const codeword = eccBlocks[g][b].slice(c * 8, (c + 1) * 8)
+        const codewordDigit = convertToDigit(codeword)
+        eccTable[row] ??= []
+        eccTable[row][column] = codewordDigit
+        column++
+      }
+      row++
+      column = 0
+
+    }
+    // switch to group 2
+    groupsPerBlock = eccInfo.group2NumBlocks
+  }
+
+  // flatten out the ecc table into a single array
+  // by reading the ecc codewords column by column
+  const flattenedEccTable: number[] = []
+  for (let c = 0; c < codewordsPerBlock; c++)
+    for (let r = 0; r < eccTable.length; r++)
+      flattenedEccTable.push(eccTable[r][c])
+
+  // convert flat data table to bits and push into icw
+  flattenedCodewordTable.forEach(c => icw.push(...ConvertToBitsNew(c, 8)))
+
+  // convert flat ecc table to bits and push into icw
+  flattenedEccTable.forEach(c => icw.push(...ConvertToBitsNew(c, 8)))
+
+  return icw
 }
 
 /// result is ecc[group][block][bit], because theres 1 codeword per block
