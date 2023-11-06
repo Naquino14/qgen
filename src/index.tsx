@@ -1,7 +1,7 @@
 import React from 'react'
 import { FinderPattern, AlignmentPattern } from './patterns'
 import { Stampv4 } from './stamper'
-import { PayloadToCodewords, ErrorCorrectionLevel, GenV4ByteModeHeader, GenV4Payload, MaskPattern } from './encoding'
+import { PayloadToCodewords, ErrorCorrectionLevel, GenV4ByteModeHeader, GenV4Payload, MaskPattern, GenerateQRCode } from './encoding'
 
 const v10wh = 66
 const v4wh = 44
@@ -35,16 +35,7 @@ export const QrRenderer: React.FC<Props> = ({
   falseColor ??= 'white'
   invertColors ??= false
 
-  // for testing purposes, override the payload
-  payload = 'http://localhost:3000/&eventid=67897654467898765&uid=1234567890&tag=0'
-
-  const bitstreamHeader = GenV4ByteModeHeader(payload)
-  const bitStream = GenV4Payload(payload)
-  const codewords = PayloadToCodewords(bitStream)
-
-  // let bitstream = GenV10ECIheader(payload)
-
-  const qr = Stampv4(payload, ErrorCorrectionLevel.M)
+  const qr = GenerateQRCode(payload, ErrorCorrectionLevel.M)!
 
   return (
     // todo: this is goofy ahh with bug and small dimensions, pls fix

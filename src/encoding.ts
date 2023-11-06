@@ -12,6 +12,7 @@ import {
   ByteTableMap,
 } from './patterns'
 import { CleanGeneratorPoly, GenGeneratorPoly, PolyLongDivision } from './polymath'
+import { Stamp } from './stamper'
 
 export enum ErrorCorrectionLevel {
   L,
@@ -48,8 +49,6 @@ export enum Mode {
 }
 
 export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorrectionLevel = ErrorCorrectionLevel.L): boolean[][] | null => {
-  const code: boolean[][] = []
-
   // step 1: analyze data
   const mode: Mode = (() => {
     // check if numeric
@@ -131,6 +130,9 @@ export const GenerateQRCode = (payload: string, errorCorrectionLevel: ErrorCorre
 
   payloadBits.splice(0, payloadBits.length)
   payloadBits.push(...interleavedCodewords)
+
+  // step 7: module placement
+  const code = Stamp(payloadBits, version)
 
   return code // placeholder
 }

@@ -18,6 +18,21 @@ export const AlignmentPattern = [
   [true, true, true, true, true],
 ]
 
+export const VerticalSeparator = [
+  [false, false, false, false, false, false, false, false]
+]
+
+export const HorizontalSeparator = [
+  [false],
+  [false],
+  [false],
+  [false],
+  [false],
+  [false],
+  [false],
+  [false],
+]
+
 // see 7.4.10 page 40 of ISO/IEC 18004:2015(E)
 export const CodewordPadding0 = [true, true, true, false, true, true, false, false] // 11101100
 export const CodewordPadding1 = [false, false, false, true, false, false, false, true] // 00010001

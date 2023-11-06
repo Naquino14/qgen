@@ -1,6 +1,144 @@
+import { GetFinderPatternLocations } from './ecct'
 import { ErrorCorrectionLevel, GenFormatInformation, MaskPattern, XOR } from './encoding'
-import { AlignmentPattern, FinderPattern } from './patterns'
+import { AlignmentPattern, FinderPattern, HorizontalSeparator, VerticalSeparator } from './patterns'
 
+export const Stamp = (payload: boolean[], version: number): boolean[][] => {
+  console.log(version)
+  // 1: create base
+  const base: boolean[][] = []
+  const reserved: boolean[][] = []
+  const size = ((version - 1) * 4) + 21
+
+  for (let i = 0; i < size; i++) {
+    base[i] = new Array(size).fill(false)
+    reserved[i] = new Array(size).fill(false)
+  }
+
+  // 2: stamp finder patterns
+  // first one is in the top left corner
+  StampCodeNew(base, reserved, FinderPattern, 0, 0)
+  // second one is in the top right corner
+  StampCodeNew(base, reserved, FinderPattern, size - 7, 0)
+  // third one is on the bottom left corner
+  StampCodeNew(base, reserved, FinderPattern, 0, size - 7)
+
+  // 3: add separators
+  // top left
+  StampCodeNew(base, reserved, VerticalSeparator, 0, 7)
+  StampCodeNew(base, reserved, HorizontalSeparator, 7, 0)
+  // top right
+  StampCodeNew(base, reserved, VerticalSeparator, size - 8, 7)
+  StampCodeNew(base, reserved, HorizontalSeparator, 7, size - 8)
+  // bottom left
+  StampCodeNew(base, reserved, VerticalSeparator, 0, size - 8)
+  StampCodeNew(base, reserved, HorizontalSeparator, size - 8, 0)
+
+  // step 4: stamp alignment patterns
+  // step 4.1: find the coordinates of all alignment patterns
+  const apLocations = GetFinderPatternLocations(version)
+  // step 4.2: stamp all the alignment patterns
+  for (let i = 0; i < apLocations.length; i++)
+    for (let j = 0; j < apLocations.length; j++)
+      StampOverlapCheck(base, reserved, AlignmentPattern, apLocations[i] - 2, apLocations[j] - 2)
+
+  // step 5: stamp timing patterns
+  for (let i = 7; i < size - 7; i++) {
+    base[i][6] = i % 2 === 0
+    reserved[6][i] = true
+    base[6][i] = i % 2 === 0
+    reserved[i][6] = true
+  }
+
+  // step 6: Reserve format info area
+  // 6.1 reserve funny module
+  reserved[4 * version + 9][8] = true
+  // 6.2 format info area
+  // top left corner
+  for (let i = 0; i < 9; i++) {
+    reserved[i][8] = true
+    reserved[8][i] = true
+  }
+  // bottom left corner
+  for (let i = 0; i < 7; i++) {
+    reserved[size - 7 + i][8] = true
+    // top right corner
+    reserved[8][size - 8 + i] = true
+  }
+  reserved[8][size - 1] = true
+
+
+  // step 7: Reserve version info area (if applicable)
+  if (version >= 7) {
+    for (let i = 0; i < 6; i++)
+      for (let j = 0; j < 3; j++) {
+        reserved[size - 11 + j][i] = true
+        reserved[i][size - 11 + j] = true
+      }
+  }
+
+  // step 8: place payload
+  // start on the bottom right, and start snaking upwards
+  // snake up until you hit a reserved area, then snake left
+
+  // wip
+
+  // return reserved
+  return base
+}
+
+export const isVerticalTimingPattern = (x: number, y: number, size: number): boolean => {
+  return x === 6 && y >= 7 && y <= size - 8
+}
+
+/**
+ * Like stamp, except it doesnt modify the base if the stamp overlaps with a reserved area
+ * @param base the base to stamp on
+ * @param reserved the reserved areas
+ * @param stamp the stamp to stamp  
+ * @param x the x offset 
+ * @param y the y offset
+ */
+export const StampOverlapCheck = (base: boolean[][], reserved: boolean[][], stamp: boolean[][], x: number = 0, y: number = 0): boolean => {
+  const result: boolean[][] = base
+  const reservedResult: boolean[][] = reserved
+  // check the entire stamp if it overlaps
+  for (let i = 0; i < stamp.length; i++)
+    for (let j = 0; j < stamp[i].length; j++)
+      if (reservedResult[i + y][j + x])
+        return false // if it overlaps, return false
+  // if it doesnt overlap, stamp it
+  StampCodeNew(result, reservedResult, stamp, x, y)
+  return true
+}
+
+/**
+ *  Stamp a stamp on a base. Use this for reserved areas
+ * @param base  The base to stamp on
+ * @param reserved The reserved areas
+ * @param stamp  The stamp to stamp
+ * @param x x offset
+ * @param y y offset
+ * @returns 
+ */
+export const StampCodeNew = (base: boolean[][], reserved: boolean[][], stamp: boolean[][], x: number = 0, y: number = 0) => {
+  const result: boolean[][] = base
+  const reservedResult: boolean[][] = reserved
+  for (let i = 0; i < stamp.length; i++) {
+    for (let j = 0; j < stamp[i].length; j++) {
+      result[i + y][j + x] = stamp[i][j]
+      reservedResult[i + y][j + x] = true
+    }
+  }
+}
+
+/**
+ *  Stamp a stamp on a base. Use this for reserved areas
+ * @param base  The base to stamp on
+ * @param stamp  The stamp to stamp
+ * @param x x offset
+ * @param y y offset
+ * @returns 
+ */
 export const StampCode = (base: boolean[][], stamp: boolean[][], x: number = 0, y: number = 0) => {
   const result: boolean[][] = base
   for (let i = 0; i < stamp.length; i++) {
