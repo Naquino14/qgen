@@ -1,3 +1,4 @@
+import { version } from 'react'
 import { GetFinderPatternLocations } from './ecct'
 import { ErrorCorrectionLevel, GenFormatInformation, MaskPattern, XOR } from './encoding'
 import { AlignmentPattern, FinderPattern, HorizontalSeparator, VerticalSeparator } from './patterns'
@@ -49,6 +50,65 @@ export const Stamp = (payload: boolean[], version: number): boolean[][] => {
     reserved[i][6] = true
   }
 
+  // 5.1: make skip zones to send to the snake function later
+  // make a copy of the reserved areas and xor with everything but alignment 
+  // and timing and bottom left vertical separator.
+  // ### WARNING ### This is a potential source of error: Im not sure if the top left vertical separator 
+  // is supposed to be reserved
+  const skipZones: boolean[][] = []
+  for (let i = 0; i < size; i++) {
+    skipZones[i] = new Array(size).fill(false)
+    for (let j = 0; j < size; j++)
+      skipZones[i][j] = reserved[i][j]
+  }
+
+  // xor with everything but alignment and timing and bottom left vertical separator
+  // erase the alignment patterns
+  // erase bottom left alignment pattern
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 7; c++)
+      skipZones[size - 8 + r][c] = false
+  // set bar to the right of the bottom left alignment pattern to true (format info)
+  for (let r = 0; r < 8; r++)
+    skipZones[size - 8 + r][8] = true
+  // erase top left finder pattern, separator, and format info
+  // ### WARNING ### this is the exact point of possible error as mentioned above
+  for (let r = 0; r < 9; r++)
+    for (let c = 0; c < 9; c++)
+      skipZones[r][c] = false
+  // erase top right finder pattern, separator, and format info
+  for (let r = 0; r < 9; r++)
+    for (let c = 0; c < 8; c++)
+      skipZones[r][size - 8 + c] = false
+  // reserve rop right format info as a skip zone
+  if (version >= 7)
+    for (let r = 0; r < 6; r++)
+      for (let c = 0; c < 3; c++)
+        skipZones[r][size - 11 + c] = true
+
+  // 5.2 create a copy of the base to make boundaries to send to the snake function later
+  // create a copy of the base
+  const boundaries: boolean[][] = []
+  // populate boundaries with all false
+  for (let i = 0; i < base.length; i++)
+    boundaries[i] = new Array(base.length).fill(false)
+  // populate boundaries with horizontal separators
+  for (let i = 0; i < 9; i++) {
+    // top left
+    boundaries[8][i] = true
+    // bottom left
+    if (i <= 6)
+      boundaries[base.length - 8][i] = true
+    // top right
+    if (i <= 8)
+      boundaries[8][base.length - 9 + i] = true
+  }
+  // add bottom left format info if applicable
+  if (version >= 7)
+    for (let r = 0; r < 3; r++)
+      for (let c = 0; c < 6; c++)
+        boundaries[base.length - 11 + r][c] = true
+
   // step 6: Reserve format info area
   // 6.1 reserve funny module
   reserved[4 * version + 9][8] = true
@@ -80,10 +140,80 @@ export const Stamp = (payload: boolean[], version: number): boolean[][] => {
   // start on the bottom right, and start snaking upwards
   // snake up until you hit a reserved area, then snake left
 
-  // wip
+  // PlaySnake(base, payload, skipZones)
 
   // return reserved
   return base
+  // return skipZones
+  // return boundaries
+}
+
+/**
+ * Snake and stamp the bit payload onto the base
+ * ### WARNING ### Potential point of failure:
+ *     NOTE FOR FUTURE DEBUGGING: Endianness might be f***** up here
+ * @param base the qr code matrix
+ * @param payload the payload to stamp
+ * @param skipZones the reserved areas to skip
+ */
+export const PlaySnake = (base: boolean[][], payload: boolean[], skipZones: boolean[][], boundaryZones: boolean[][]) => {
+  // the idea I came up with is basically looping over every codeword, and stamping when available
+  // for this we need 2 masks: boundaries (OOB, vertical separators) 
+  //    and reserved areas (finder patterns, vertical bar of version info on bottom left, timing patterns)
+  // We need a few variables to keep track of what the heck to do next: 
+  //    basically we have a cursor (x, y), a direction (left, upright, downright), and a snake direction (up true, down false)
+  //    we also have a codeword bit pointer, which is just a number (unless endianness is messed up, thats gonna be fun to fix)
+  // snake direction is used to determine whether we are going to turn downright or upright
+  // direction is used to determine where we are going to go next
+  // cursor is where we are obviously
+  // the basic order of execution is as follows:
+  // loop until we run out of payload (while loop)
+  //     check(): can we stamp here?
+  //     no:
+  //         why? switch (reason):
+  //             boundary: 
+  //                 snake direction = !snake direction
+  //                 move back to to where we came from, turn left, and go left
+  //                 continue
+  //             reserved area:
+  //                 is vertical timing pattern:
+  //                     move left
+  //                     continue
+  //                 otherwise: 
+  //                     move normally (we will check if we can stamp there next iteration)
+  //                     change direction normally
+  //                     continue
+  //     yes:
+  //         stamp and increment codeword bit pointer
+  //         move normally
+  //         change direction normally
+
+  // got it? cool lets go
+
+  // initialize variables
+  let cursor = { x: 0, y: 0 }
+  let cwptr = 0
+  enum Direction { left, upright, downright }
+  let direction = Direction.left
+  enum SnakeDirection { up = 0, down = 1 }
+  let snakeDirection = SnakeDirection.up
+
+  // create masks
+  // 1: boundaries
+  // boundaries are any vertical separator or oob
+  // oob will be handled by a check function
+
+  // helper functions
+  enum StampReason { ok, boundary, reserved }
+  const CanStamp = (): StampReason => {
+    return StampReason.ok // nyi
+  }
+
+  // loop until we run out of payload
+  while (cwptr < payload.length) {
+    // can we stamp here?
+
+  }
 }
 
 export const isVerticalTimingPattern = (x: number, y: number, size: number): boolean => {
