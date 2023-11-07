@@ -88,26 +88,26 @@ export const Stamp = (payload: boolean[], version: number): boolean[][] => {
 
   // 5.2 create a copy of the base to make boundaries to send to the snake function later
   // create a copy of the base
-  const boundaries: boolean[][] = []
+  const boundaryZones: boolean[][] = []
   // populate boundaries with all false
   for (let i = 0; i < base.length; i++)
-    boundaries[i] = new Array(base.length).fill(false)
+    boundaryZones[i] = new Array(base.length).fill(false)
   // populate boundaries with horizontal separators
   for (let i = 0; i < 9; i++) {
     // top left
-    boundaries[8][i] = true
+    boundaryZones[8][i] = true
     // bottom left
     if (i <= 6)
-      boundaries[base.length - 8][i] = true
+      boundaryZones[base.length - 8][i] = true
     // top right
     if (i <= 8)
-      boundaries[8][base.length - 9 + i] = true
+      boundaryZones[8][base.length - 9 + i] = true
   }
   // add bottom left format info if applicable
   if (version >= 7)
     for (let r = 0; r < 3; r++)
       for (let c = 0; c < 6; c++)
-        boundaries[base.length - 11 + r][c] = true
+        boundaryZones[base.length - 11 + r][c] = true
 
   // step 6: Reserve format info area
   // 6.1 reserve funny module
