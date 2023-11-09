@@ -100,8 +100,8 @@ export const Stamp = (payload: boolean[], version: number): boolean[][] => {
     if (i <= 6)
       boundaryZones[base.length - 8][i] = true
     // top right
-    if (i <= 8)
-      boundaryZones[8][base.length - 9 + i] = true
+    if (i <= 7)
+      boundaryZones[8][base.length - 8 + i] = true
   }
   // add bottom left format info if applicable
   if (version >= 7)
@@ -112,6 +112,7 @@ export const Stamp = (payload: boolean[], version: number): boolean[][] => {
   // step 6: Reserve format info area
   // 6.1 reserve funny module
   reserved[4 * version + 9][8] = true
+  base[4 * version + 9][8] = true
   // 6.2 format info area
   // top left corner
   for (let i = 0; i < 9; i++) {
@@ -139,24 +140,24 @@ export const Stamp = (payload: boolean[], version: number): boolean[][] => {
   // step 8: place payload
   // start on the bottom right, and start snaking upwards
   // snake up until you hit a reserved area, then snake left
-
-  // PlaySnake(base, payload, skipZones)
+  console.log(`Payload (${payload.length}): ${payload.map((x) => x ? 1 : 0).join('')}`)
+  PlaySnake(base, payload, skipZones, boundaryZones, size)
 
   // return reserved
   return base
   // return skipZones
-  // return boundaries
+  // return boundaryZones
 }
 
 /**
  * Snake and stamp the bit payload onto the base
- * ### WARNING ### Potential point of failure:
+ * ### WARNING Potential point of failure:
  *     NOTE FOR FUTURE DEBUGGING: Endianness might be f***** up here
  * @param base the qr code matrix
  * @param payload the payload to stamp
  * @param skipZones the reserved areas to skip
  */
-export const PlaySnake = (base: boolean[][], payload: boolean[], skipZones: boolean[][], boundaryZones: boolean[][]) => {
+export const PlaySnake = (base: boolean[][], payload: boolean[], skipZones: boolean[][], boundaryZones: boolean[][], size: number) => {
   // the idea I came up with is basically looping over every codeword, and stamping when available
   // for this we need 2 masks: boundaries (OOB, vertical separators) 
   //    and reserved areas (finder patterns, vertical bar of version info on bottom left, timing patterns)
@@ -191,10 +192,10 @@ export const PlaySnake = (base: boolean[][], payload: boolean[], skipZones: bool
   // got it? cool lets go
 
   // initialize variables
-  let cursor = { x: 0, y: 0 }
+  let cursor = { x: size - 1, y: size - 1 }
   let cwptr = 0
   enum Direction { left, upright, downright }
-  let direction = Direction.left
+  let direction = Direction.upright
   enum SnakeDirection { up = 0, down = 1 }
   let snakeDirection = SnakeDirection.up
 
@@ -204,19 +205,75 @@ export const PlaySnake = (base: boolean[][], payload: boolean[], skipZones: bool
   // oob will be handled by a check function
 
   // helper functions
-  enum StampReason { ok, boundary, reserved }
+  enum StampReason { ok, boundary, reserved, vertTiming }
   const CanStamp = (): StampReason => {
-    return StampReason.ok // nyi
+    // check for oob
+    if (cursor.x < 0 || cursor.x >= base.length || cursor.y < 0 || cursor.y >= base.length)
+      return StampReason.boundary
+    // check if cursor is in a boundary zone
+    if (boundaryZones[cursor.y][cursor.x])
+      return StampReason.boundary
+    // check if cursor is in a reserved zone 
+    if (skipZones[cursor.y][cursor.x])
+      return (IsVerticalTimingPattern(cursor.x, cursor.y, size) ? StampReason.vertTiming : StampReason.reserved)
+    // if we got here, we can stamp
+    return StampReason.ok
+  }
+
+  const MoveAndTurn = () => {
+    // check our current direction and snake direction and alternate accordingly
+    if (direction === Direction.left) {
+      // move up and right if going up, down and right if going down
+      cursor.x += 1
+      cursor.y += snakeDirection === SnakeDirection.up ? -1 : 1 // remember that y is inverted
+      // turn up right if going up, down right if going down
+      direction = snakeDirection === SnakeDirection.up ? Direction.upright : Direction.downright
+    } else if (direction === Direction.upright || direction === Direction.downright) {
+      // move left
+      cursor.x--
+      // turn left
+      direction = Direction.left
+    }
+  }
+
+  const MoveBoundary = () => {
+    // move left twice
+    cursor.x -= 2
+    // move down if we went too far up and vice versa
+    cursor.y += (snakeDirection === SnakeDirection.up ? 1 : -1)
+    // we always turn left when hitting a boundary
+    direction = (snakeDirection === SnakeDirection.up ? Direction.downright : Direction.upright)
+    // time to change snake direction!
+    snakeDirection = (snakeDirection === SnakeDirection.up ? SnakeDirection.down : SnakeDirection.up)
+  }
+
+  const LOG = (stampReason: StampReason) => {
+    const reason = (stampReason === StampReason.ok ? 'OK' : stampReason === StampReason.boundary ? 'boundary' : stampReason === StampReason.reserved ? 'reserved' : 'vertTiming')
+    console.log(`pos: (${cursor.x}, ${cursor.y}) dir: ${direction === Direction.left ? 'Left' : direction === Direction.downright ? 'Down Right' : 'Down Left'} snake dir: ${snakeDirection === SnakeDirection.up ? 'UP' : 'DN'} reason: ${reason} cwptr: ${cwptr} bit: ${payload[cwptr] ? 'true' : 'false'}`)
   }
 
   // loop until we run out of payload
   while (cwptr < payload.length) {
     // can we stamp here?
-
+    const stampReason = CanStamp()
+    LOG(stampReason)
+    if (stampReason === StampReason.ok) {
+      // stamp this codeword
+      base[cursor.y][cursor.x] = payload[cwptr++]
+      // move normally
+      MoveAndTurn()
+    } else if (stampReason === StampReason.boundary) {
+      MoveBoundary() // move back and turn left 
+    } else if (stampReason === StampReason.reserved) {
+      MoveAndTurn() // move normally but dont place
+    }
+    else if (stampReason === StampReason.vertTiming) {
+      cursor.x-- // move left
+    }
   }
 }
 
-export const isVerticalTimingPattern = (x: number, y: number, size: number): boolean => {
+export const IsVerticalTimingPattern = (x: number, y: number, size: number): boolean => {
   return x === 6 && y >= 7 && y <= size - 8
 }
 

@@ -49,6 +49,7 @@ export const QrRenderer: React.FC<Props> = ({
               y={x * squareLength}
               width={10}
               height={10}
+              id={`${y}-${x}`}
               fill={(square || invertColors) && !(square && invertColors) ? trueColor! : falseColor!}
             />
           )),
